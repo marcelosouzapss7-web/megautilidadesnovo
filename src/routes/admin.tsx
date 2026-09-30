@@ -42,7 +42,7 @@ function AdminPage() {
   }, []);
 
   useEffect(() => {
-    if (!session) return setIsAdmin(null);
+    if (!session) { setIsAdmin(null); return; }
     supabase.rpc("claim_admin").then(({ data }) => setIsAdmin(!!data));
   }, [session]);
 
@@ -77,7 +77,7 @@ function Login() {
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (password.length < 6) return toast.error("A senha precisa ter pelo menos 6 caracteres");
+    if (password.length < 6) return void toast.error("A senha precisa ter pelo menos 6 caracteres");
     setLoading(true);
     const { error } = firstAccess
       ? await supabase.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin + "/admin" } })
@@ -159,12 +159,12 @@ function Produtos() {
   async function add(e: FormEvent) {
     e.preventDefault();
     const valor = Number(price.replace(",", "."));
-    if (!name.trim() || isNaN(valor)) return toast.error("Preencha nome e preço corretamente");
+    if (!name.trim() || isNaN(valor)) return void toast.error("Preencha nome e preço corretamente");
     setSaving(true);
     const image_url = file ? await fileToDataUrl(file) : null;
     const { error } = await supabase.from("products").insert({ name: name.trim().slice(0, 200), price: valor, image_url });
     setSaving(false);
-    if (error) return toast.error("Não foi possível salvar");
+    if (error) return void toast.error("Não foi possível salvar");
     toast.success("Produto adicionado");
     setName(""); setPrice(""); setFile(null);
     (e.target as HTMLFormElement).reset();
@@ -226,7 +226,7 @@ function Config() {
     setSaving(true);
     const { error } = await supabase.from("site_settings").upsert({ id: 1, logo_url, updated_at: new Date().toISOString() });
     setSaving(false);
-    if (error) return toast.error("Não foi possível salvar");
+    if (error) return void toast.error("Não foi possível salvar");
     toast.success("Logo atualizada");
     qc.invalidateQueries({ queryKey: ["site_settings"] });
   }
