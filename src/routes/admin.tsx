@@ -150,6 +150,7 @@ function Produtos() {
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [desc, setDesc] = useState("");
   const [saving, setSaving] = useState(false);
   const { data: produtos = [] } = useQuery({
     queryKey: ["products"],
@@ -162,11 +163,11 @@ function Produtos() {
     if (!name.trim() || isNaN(valor)) return void toast.error("Preencha nome e preço corretamente");
     setSaving(true);
     const image_url = file ? await fileToDataUrl(file) : null;
-    const { error } = await supabase.from("products").insert({ name: name.trim().slice(0, 200), price: valor, image_url });
+    const { error } = await supabase.from("products").insert({ name: name.trim().slice(0, 200), price: valor, image_url, description: desc.trim() || null });
     setSaving(false);
     if (error) return void toast.error("Não foi possível salvar");
     toast.success("Produto adicionado");
-    setName(""); setPrice(""); setFile(null);
+    setName(""); setPrice(""); setFile(null); setDesc("");
     (e.target as HTMLFormElement).reset();
     qc.invalidateQueries({ queryKey: ["products"] });
   }
@@ -192,6 +193,11 @@ function Produtos() {
         <div className="space-y-2">
           <Label>Foto</Label>
           <Input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+        </div>
+        <div className="space-y-2 sm:col-span-2">
+          <Label>Descrição</Label>
+          <textarea value={desc} onChange={(e) => setDesc(e.target.value)} maxLength={5000} rows={5}
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
         </div>
         <Button type="submit" disabled={saving} className="sm:col-span-2">{saving ? "Salvando…" : "Adicionar produto"}</Button>
       </form>
