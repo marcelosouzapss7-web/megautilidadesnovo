@@ -256,6 +256,6 @@ function Config() {
   );
 }
 
-export function formatBRL(v: number) {
+function formatBRL(v: number) {
   return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
