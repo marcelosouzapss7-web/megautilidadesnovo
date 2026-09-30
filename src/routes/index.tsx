@@ -17,6 +17,12 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
+const frases = [
+  "Compre no site e retire em loja!* Consulte condições! *Apenas em São Paulo (Capital)",
+  "Parcelamos em até 6x sem juros",
+  "Entregamos em todo Brasil",
+];
+
 const brl = (v: number) => Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 function Index() {
@@ -32,6 +38,20 @@ function Index() {
   return (
     <div className="min-h-screen bg-muted" style={{ fontFamily: "Montserrat, sans-serif" }}>
       <div className="mx-auto min-h-screen max-w-md bg-background">
+        <div className="overflow-hidden bg-primary py-1.5 text-primary-foreground">
+          <div className="animate-marquee flex w-max whitespace-nowrap text-xs font-semibold uppercase">
+            {[0, 1].map((k) => (
+              <div key={k} className="flex shrink-0" aria-hidden={k === 1}>
+                {frases.map((f) => (
+                  <span key={f} className="flex items-center">
+                    <span className="px-4">{f}</span>
+                    <span>★</span>
+                  </span>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
         <header className="sticky top-0 z-10 flex items-center justify-between bg-background px-3 py-3 shadow-sm">
           <div className="flex items-center gap-3 text-primary">
             <svg width="22" height="18" viewBox="0 0 22 18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
