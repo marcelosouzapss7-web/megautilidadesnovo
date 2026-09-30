@@ -1,0 +1,261 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState, type FormEvent } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import type { Session } from "@supabase/supabase-js";
+import { Package, Settings, LogOut, Trash2, Store } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { fileToDataUrl } from "@/lib/image";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Toaster } from "@/components/ui/sonner";
+
+export const Route = createFileRoute("/admin")({
+  ssr: false,
+  head: () => ({
+    meta: [
+      { title: "Painel Admin — Mercado Shopping" },
+      { name: "description", content: "Painel administrativo da loja Mercado Shopping." },
+      { property: "og:title", content: "Painel Admin — Mercado Shopping" },
+      { property: "og:description", content: "Painel administrativo da loja Mercado Shopping." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
+  component: AdminPage,
+});
+
+function AdminPage() {
+  const [session, setSession] = useState<Session | null>(null);
+  const [ready, setReady] = useState(false);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const { data } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setReady(true);
+    });
+    return () => data.subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!session) return setIsAdmin(null);
+    supabase.rpc("claim_admin").then(({ data }) => setIsAdmin(!!data));
+  }, [session]);
+
+  return (
+    <>
+      <Toaster />
+      {!ready ? null : !session ? (
+        <Login />
+      ) : isAdmin === null ? (
+        <p className="p-8 text-center text-muted-foreground">Carregando…</p>
+      ) : !isAdmin ? (
+        <div className="p-8 text-center">
+          <p className="mb-4">Esta conta não tem acesso de administrador.</p>
+          <Button onClick={() => supabase.auth.signOut()}>Sair</Button>
+        </div>
+      ) : (
+        <Dashboard email={session.user.email ?? ""} />
+      )}
+    </>
+  );
+}
+
+function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { data: hasAdmin } = useQuery({
+    queryKey: ["admin_exists"],
+    queryFn: async () => (await supabase.rpc("admin_exists")).data ?? false,
+  });
+  const firstAccess = hasAdmin === false;
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    if (password.length < 6) return toast.error("A senha precisa ter pelo menos 6 caracteres");
+    setLoading(true);
+    const { error } = firstAccess
+      ? await supabase.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin + "/admin" } })
+      : await supabase.auth.signInWithPassword({ email, password });
+    setLoading(false);
+    if (error) toast.error(firstAccess ? error.message : "E-mail ou senha incorretos");
+  }
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-muted px-4" style={{ fontFamily: "Montserrat, sans-serif" }}>
+      <form onSubmit={submit} className="w-full max-w-sm space-y-4 rounded-xl bg-background p-6 shadow-lg">
+        <h1 className="text-center text-2xl font-extrabold text-primary">Painel Admin</h1>
+        <p className="text-center text-sm text-muted-foreground">
+          {firstAccess ? "Primeiro acesso: crie seu e-mail e senha de administrador." : "Entre com seu e-mail e senha."}
+        </p>
+        <div className="space-y-2">
+          <Label htmlFor="email">E-mail</Label>
+          <Input id="email" type="email" required maxLength={255} value={email} onChange={(e) => setEmail(e.target.value)} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="senha">Senha</Label>
+          <Input id="senha" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+        </div>
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading ? "Aguarde…" : firstAccess ? "Criar acesso e entrar" : "Entrar"}
+        </Button>
+      </form>
+    </div>
+  );
+}
+
+function Dashboard({ email }: { email: string }) {
+  const [tab, setTab] = useState<"produtos" | "config">("produtos");
+  const qc = useQueryClient();
+  async function logout() {
+    qc.clear();
+    await supabase.auth.signOut();
+  }
+  const item = (k: typeof tab, label: string, Icon: typeof Package) => (
+    <button
+      onClick={() => setTab(k)}
+      className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${tab === k ? "bg-primary text-primary-foreground" : "text-sidebar-foreground hover:bg-sidebar-accent"}`}
+    >
+      <Icon className="h-5 w-5 shrink-0" /> <span className="hidden sm:inline">{label}</span>
+    </button>
+  );
+  return (
+    <div className="flex min-h-screen bg-muted" style={{ fontFamily: "Montserrat, sans-serif" }}>
+      <aside className="flex w-16 shrink-0 flex-col gap-2 border-r bg-sidebar p-2 sm:w-56 sm:p-4">
+        <p className="mb-4 hidden text-lg font-extrabold text-primary sm:block">Admin</p>
+        {item("produtos", "Produtos", Package)}
+        {item("config", "Configuração", Settings)}
+        <div className="mt-auto space-y-2">
+          <Link to="/" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent">
+            <Store className="h-5 w-5 shrink-0" /> <span className="hidden sm:inline">Ver loja</span>
+          </Link>
+          <button onClick={logout} className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent">
+            <LogOut className="h-5 w-5 shrink-0" /> <span className="hidden sm:inline">Sair</span>
+          </button>
+          <p className="hidden truncate text-xs text-muted-foreground sm:block">{email}</p>
+        </div>
+      </aside>
+      <main className="min-w-0 flex-1 p-4 sm:p-8">{tab === "produtos" ? <Produtos /> : <Config />}</main>
+    </div>
+  );
+}
+
+function Produtos() {
+  const qc = useQueryClient();
+  const [name, setName] = useState("");
+  const [price, setPrice] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [saving, setSaving] = useState(false);
+  const { data: produtos = [] } = useQuery({
+    queryKey: ["products"],
+    queryFn: async () => (await supabase.from("products").select("*").order("created_at", { ascending: false })).data ?? [],
+  });
+
+  async function add(e: FormEvent) {
+    e.preventDefault();
+    const valor = Number(price.replace(",", "."));
+    if (!name.trim() || isNaN(valor)) return toast.error("Preencha nome e preço corretamente");
+    setSaving(true);
+    const image_url = file ? await fileToDataUrl(file) : null;
+    const { error } = await supabase.from("products").insert({ name: name.trim().slice(0, 200), price: valor, image_url });
+    setSaving(false);
+    if (error) return toast.error("Não foi possível salvar");
+    toast.success("Produto adicionado");
+    setName(""); setPrice(""); setFile(null);
+    (e.target as HTMLFormElement).reset();
+    qc.invalidateQueries({ queryKey: ["products"] });
+  }
+
+  async function remove(id: string) {
+    if (!confirm("Excluir este produto?")) return;
+    await supabase.from("products").delete().eq("id", id);
+    qc.invalidateQueries({ queryKey: ["products"] });
+  }
+
+  return (
+    <div className="space-y-6">
+      <h1 className="text-2xl font-extrabold">Produtos</h1>
+      <form onSubmit={add} className="grid gap-4 rounded-xl bg-background p-4 shadow-sm sm:grid-cols-2">
+        <div className="space-y-2 sm:col-span-2">
+          <Label>Nome do produto</Label>
+          <Input value={name} onChange={(e) => setName(e.target.value)} required maxLength={200} />
+        </div>
+        <div className="space-y-2">
+          <Label>Preço (R$)</Label>
+          <Input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="69,89" required inputMode="decimal" />
+        </div>
+        <div className="space-y-2">
+          <Label>Foto</Label>
+          <Input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+        </div>
+        <Button type="submit" disabled={saving} className="sm:col-span-2">{saving ? "Salvando…" : "Adicionar produto"}</Button>
+      </form>
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+        {produtos.map((p) => (
+          <div key={p.id} className="overflow-hidden rounded-xl bg-background shadow-sm">
+            {p.image_url ? <img src={p.image_url} alt={p.name} className="aspect-[3/4] w-full object-cover" /> : <div className="aspect-[3/4] bg-muted" />}
+            <div className="space-y-1 p-3">
+              <p className="line-clamp-2 text-sm font-medium">{p.name}</p>
+              <p className="font-bold text-primary">{formatBRL(p.price)}</p>
+              <Button variant="destructive" size="sm" className="w-full" onClick={() => remove(p.id)}>
+                <Trash2 className="h-4 w-4" /> Excluir
+              </Button>
+            </div>
+          </div>
+        ))}
+        {produtos.length === 0 && <p className="col-span-full text-muted-foreground">Nenhum produto ainda.</p>}
+      </div>
+    </div>
+  );
+}
+
+function Config() {
+  const qc = useQueryClient();
+  const [saving, setSaving] = useState(false);
+  const { data: settings } = useQuery({
+    queryKey: ["site_settings"],
+    queryFn: async () => (await supabase.from("site_settings").select("*").eq("id", 1).maybeSingle()).data,
+  });
+
+  async function save(logo_url: string | null) {
+    setSaving(true);
+    const { error } = await supabase.from("site_settings").upsert({ id: 1, logo_url, updated_at: new Date().toISOString() });
+    setSaving(false);
+    if (error) return toast.error("Não foi possível salvar");
+    toast.success("Logo atualizada");
+    qc.invalidateQueries({ queryKey: ["site_settings"] });
+  }
+
+  return (
+    <div className="max-w-xl space-y-6">
+      <h1 className="text-2xl font-extrabold">Configuração</h1>
+      <div className="space-y-4 rounded-xl bg-background p-4 shadow-sm">
+        <Label>Logo do cabeçalho (substitui a estrela e o nome)</Label>
+        <div className="flex h-24 items-center justify-center rounded-lg border bg-muted p-2">
+          {settings?.logo_url ? <img src={settings.logo_url} alt="Logo" className="max-h-full max-w-full object-contain" /> : <span className="text-sm text-muted-foreground">Nenhuma logo enviada</span>}
+        </div>
+        <Input
+          type="file"
+          accept="image/*"
+          disabled={saving}
+          onChange={async (e) => {
+            const f = e.target.files?.[0];
+            if (f) await save(await fileToDataUrl(f, 600));
+          }}
+        />
+        {settings?.logo_url && (
+          <Button variant="outline" onClick={() => save(null)} disabled={saving}>Remover logo</Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function formatBRL(v: number) {
+  return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
