@@ -70,6 +70,12 @@ function Produto() {
                 <a href="https://buscacepinter.correios.com.br" target="_blank" rel="noreferrer" className="text-xs font-semibold underline">Não sei meu CEP</a>
               </div>
             </div>
+            {p.description && (
+              <div className="mt-12 text-foreground">
+                <p className="text-base">Descrição</p>
+                <p className="whitespace-pre-line text-base leading-relaxed">{p.description}</p>
+              </div>
+            )}
           </main>
         )}
       </div>
