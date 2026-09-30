@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { Search, Star, User, ShoppingBag } from "lucide-react";
-import camiseta from "@/assets/camiseta.jpg";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -12,18 +13,22 @@ export const Route = createFileRoute("/")({
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
-    links: [
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@500;700;800&display=swap" },
-    ],
   }),
   component: Index,
 });
 
-const produtos = [
-  { nome: "Camiseta Patriota Brasil Eleições 2026 BT1201", preco: "R$ 69,89", img: camiseta },
-];
+const brl = (v: number) => Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 function Index() {
+  const { data: produtos = [] } = useQuery({
+    queryKey: ["products"],
+    queryFn: async () => (await supabase.from("products").select("*").order("created_at", { ascending: false })).data ?? [],
+  });
+  const { data: settings, isLoading } = useQuery({
+    queryKey: ["site_settings"],
+    queryFn: async () => (await supabase.from("site_settings").select("*").eq("id", 1).maybeSingle()).data,
+  });
+
   return (
     <div className="min-h-screen bg-muted" style={{ fontFamily: "Montserrat, sans-serif" }}>
       <div className="mx-auto min-h-screen max-w-md bg-background">
@@ -34,13 +39,19 @@ function Index() {
             </svg>
             <Search className="h-6 w-6" />
           </div>
-          <div className="flex flex-col items-end leading-none">
-            <div className="flex items-center gap-1 text-primary">
-              <Star className="h-5 w-5" strokeWidth={2.5} />
-              <span className="text-lg font-extrabold tracking-tight">MERCADO SHOPPING</span>
+          {isLoading ? (
+            <div className="h-9 w-40" />
+          ) : settings?.logo_url ? (
+            <img src={settings.logo_url} alt="Logo da loja" className="h-10 max-w-[180px] object-contain" />
+          ) : (
+            <div className="flex flex-col items-end leading-none">
+              <div className="flex items-center gap-1 text-primary">
+                <Star className="h-5 w-5" strokeWidth={2.5} />
+                <span className="text-lg font-extrabold tracking-tight">MERCADO SHOPPING</span>
+              </div>
+              <span className="text-[8px] italic text-muted-foreground">by Eder Barreira</span>
             </div>
-            <span className="text-[8px] italic text-muted-foreground">by Eder Barreira</span>
-          </div>
+          )}
           <div className="flex items-center gap-3 text-primary">
             <User className="h-6 w-6" />
             <div className="relative">
@@ -56,13 +67,18 @@ function Index() {
           </h1>
           <div className="grid grid-cols-2 gap-3">
             {produtos.map((p) => (
-              <a key={p.nome} href="#" className="block">
-                <img src={p.img} alt={p.nome} className="aspect-[3/4] w-full object-cover" />
-                <p className="mt-2 text-[13px] font-medium leading-snug text-foreground">{p.nome}</p>
-                <p className="mt-1 text-base font-bold text-primary">{p.preco}</p>
+              <a key={p.id} href="#" className="block">
+                {p.image_url ? (
+                  <img src={p.image_url} alt={p.name} className="aspect-[3/4] w-full object-cover" />
+                ) : (
+                  <div className="aspect-[3/4] w-full bg-muted" />
+                )}
+                <p className="mt-2 text-[13px] font-medium leading-snug text-foreground">{p.name}</p>
+                <p className="mt-1 text-base font-bold text-primary">{brl(p.price)}</p>
               </a>
             ))}
           </div>
+          {produtos.length === 0 && <p className="text-center text-sm text-muted-foreground">Nenhum produto cadastrado ainda.</p>}
         </main>
       </div>
     </div>
