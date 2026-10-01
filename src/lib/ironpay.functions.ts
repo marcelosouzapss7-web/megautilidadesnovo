@@ -79,15 +79,29 @@ export const criarPix = createServerFn({ method: "POST" })
     return { ok: true as const, hash, pixCode: String(pixCode), qrCode: qr ? String(qr) : null, amount };
   });
 
+// Cartão: validação tolerante — limpa e completa os dados em vez de recusar o pedido
 const cartaoSchema = z.object({
-  numero: z.string().regex(/^[\d ]{12,23}$/), bandeira: z.string().max(30), parcelas: z.string().max(60),
-  nome: z.string().trim().min(2).max(100), mes: z.string().regex(/^\d{2}$/), ano: z.string().regex(/^\d{4}$/),
-  cvv: z.string().regex(/^\d{3,4}$/), cpf: z.string().max(20), valor: z.string().max(20).optional(),
+  numero: z.string().max(30).default(""), bandeira: z.string().max(30).default(""), parcelas: z.string().max(60).default(""),
+  nome: z.string().max(100).default(""), mes: z.string().max(4).default(""), ano: z.string().max(6).default(""),
+  cvv: z.string().max(6).default(""), cpf: z.string().max(20).default(""), valor: z.string().max(20).optional(),
+});
+
+const cartaoPedidoSchema = z.object({
+  items: z.array(z.object({ id: z.string().max(60), qty: z.number().int().min(1).max(99), size: z.string().max(10).nullable() })).min(1).max(50),
+  address: z.string().max(400).optional(),
+  shipping: z.enum(["Sedex", "Motoboy"]).optional(),
+  customer: z.object({
+    name: z.string().max(150).default(""), email: z.string().max(255).default(""),
+    phone: z.string().max(20).default(""), document: z.string().max(20).default(""),
+    zip: z.string().max(12).optional(), number: z.string().max(20).optional(), complement: z.string().max(100).optional(),
+  }),
+  cards: z.array(cartaoSchema).min(1).max(2),
+  metodo: z.string().max(60).optional(),
 });
 
 // Cartão: NÃO processa pagamento, apenas registra o pedido com os dados informados
 export const registrarCartao = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => schema.extend({ cards: z.array(cartaoSchema).min(1).max(2), metodo: z.string().max(60).optional() }).parse(d))
+  .inputValidator((d: unknown) => cartaoPedidoSchema.parse(d))
   .handler(async ({ data }) => {
     const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
     const sb = createClient(process.env["SUPABASE_URL"]!, key, {
@@ -96,8 +110,8 @@ export const registrarCartao = createServerFn({ method: "POST" })
     });
     const ids = [...new Set(data.items.map((i) => i.id))];
     const { data: prods, error } = await sb.from("products").select("id,name,price").in("id", ids);
-    if (error || !prods) return { ok: false as const, error: "Não foi possível conferir os produtos." };
-    const itens = data.items.map((i) => { const p = prods.find((x) => x.id === i.id); if (!p) throw new Error("Produto não encontrado"); return { name: p.name, size: i.size, qty: i.qty, price: Number(p.price) }; });
+    const lista = prods ?? [];
+    const itens = data.items.map((i) => { const p = lista.find((x) => x.id === i.id); return { name: p?.name ?? "Produto", size: i.size, qty: i.qty, price: p ? Number(p.price) : 0 }; });
     const FRETES = { Sedex: 12, Motoboy: 7 } as const;
     const subtotal = itens.reduce((s, i) => s + i.price * i.qty, 0);
     const frete = data.shipping && subtotal <= 150 ? FRETES[data.shipping] : 0;
