@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
-import { Package, Settings, LogOut, Trash2, Store } from "lucide-react";
+import { Package, Settings, LogOut, Trash2, Store, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { fileToDataUrl } from "@/lib/image";
@@ -193,10 +193,18 @@ function Produtos() {
     qc.invalidateQueries({ queryKey: ["products"] });
   }
 
+  async function remove(id: string) {
+    if (!confirm("Excluir este produto?")) return;
+    await supabase.from("products").delete().eq("id", id);
+    if (editId === id) cancelEdit();
+    qc.invalidateQueries({ queryKey: ["products"] });
+  }
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-extrabold">Produtos</h1>
       <form onSubmit={add} className="grid gap-4 rounded-xl bg-background p-4 shadow-sm sm:grid-cols-2">
+        {editId && <p className="font-bold text-primary sm:col-span-2">Editando produto</p>}
         <div className="space-y-2 sm:col-span-2">
           <Label>Nome do produto</Label>
           <Input value={name} onChange={(e) => setName(e.target.value)} required maxLength={200} />
@@ -206,7 +214,7 @@ function Produtos() {
           <Input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="69,89" required inputMode="decimal" />
         </div>
         <div className="space-y-2">
-          <Label>Foto</Label>
+          <Label>{editId ? "Nova foto (opcional)" : "Foto"}</Label>
           <Input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
         </div>
         <div className="space-y-2 sm:col-span-2">
@@ -214,7 +222,12 @@ function Produtos() {
           <textarea value={desc} onChange={(e) => setDesc(e.target.value)} maxLength={5000} rows={5}
             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
         </div>
-        <Button type="submit" disabled={saving} className="sm:col-span-2">{saving ? "Salvando…" : "Adicionar produto"}</Button>
+        <Button type="submit" disabled={saving} className={editId ? "" : "sm:col-span-2"}>
+          {saving ? "Salvando…" : editId ? "Salvar alterações" : "Adicionar produto"}
+        </Button>
+        {editId && (
+          <Button type="button" variant="outline" onClick={(e) => cancelEdit(e.currentTarget.form)}>Cancelar</Button>
+        )}
       </form>
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
         {produtos.map((p) => (
@@ -223,6 +236,9 @@ function Produtos() {
             <div className="space-y-1 p-3">
               <p className="line-clamp-2 text-sm font-medium">{p.name}</p>
               <p className="font-bold text-primary">{formatBRL(p.price)}</p>
+              <Button variant="outline" size="sm" className="w-full" onClick={() => startEdit(p)}>
+                <Pencil className="h-4 w-4" /> Editar
+              </Button>
               <Button variant="destructive" size="sm" className="w-full" onClick={() => remove(p.id)}>
                 <Trash2 className="h-4 w-4" /> Excluir
               </Button>
