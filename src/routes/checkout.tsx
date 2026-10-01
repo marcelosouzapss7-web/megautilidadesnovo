@@ -418,6 +418,21 @@ function Checkout() {
                         <span className="mt-2 inline-flex items-center gap-1 rounded-full border border-foreground/50 px-3 py-0.5 text-[10px] text-foreground"><span className="text-primary">✓</span> Compra segura</span>
                         <p className="mt-5 rounded bg-foreground py-2.5 text-[10px] text-background">Clique em <b>finalizar compra</b> para continuar.</p>
                       </div>
+                    ) : metodo === "GOOGLE PAY" ? (
+                      <div className="mt-6 border px-4 py-10 text-center text-foreground">
+                        <span className="inline-flex items-center gap-1.5 rounded-full border-2 border-foreground/70 px-4 py-1.5 text-2xl"><svg viewBox="0 0 48 48" className="h-6 w-6"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.1C12.5 13.6 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 2.9-2.2 5.4-4.7 7.1l7.6 5.9c4.4-4.1 6.9-10.1 6.9-17.5z"/><path fill="#FBBC05" d="M10.6 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.6-5.9c-2.1 1.4-4.9 2.3-8.3 2.3-6.2 0-11.5-4.1-13.4-9.8l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/></svg>Pay</span>
+                        <p className="mt-6 text-sm font-semibold">Prossiga para efetuar o pagamento<br />através do seu dispositivo.</p>
+                        <div className="mx-auto mt-8 flex max-w-[240px] items-center rounded border border-foreground/60 px-3 py-2">
+                          <span className="flex flex-1 justify-center"><svg viewBox="0 0 48 48" className="h-5 w-5"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.1C12.5 13.6 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 2.9-2.2 5.4-4.7 7.1l7.6 5.9c4.4-4.1 6.9-10.1 6.9-17.5z"/><path fill="#FBBC05" d="M10.6 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.6-5.9c-2.1 1.4-4.9 2.3-8.3 2.3-6.2 0-11.5-4.1-13.4-9.8l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/></svg></span>
+                          <span className="mx-2 h-6 w-px bg-foreground/60" />
+                          <span className="flex gap-1">
+                            <span className="h-5 w-8 rounded-sm" style={{ background: "linear-gradient(135deg,#0f2a3d,#2f6f8f)" }} />
+                            <span className="h-5 w-8 rounded-sm" style={{ background: "linear-gradient(135deg,#9a9a9a,#d6d6d6)" }} />
+                            <span className="h-5 w-8 rounded-sm" style={{ background: "linear-gradient(135deg,#6a1fd1,#9b4dff)" }} />
+                          </span>
+                        </div>
+                        <p className="mt-3 text-xs text-muted-foreground">Parcelamento disponível</p>
+                      </div>
                     ) : metodo === "PICPAY" ? (
                       <div className="mt-6 border p-5 text-foreground">
                         <p className="text-4xl font-extrabold tracking-tight text-[hsl(140_65%_45%)]">PicPay</p>
