@@ -1,4 +1,5 @@
 import { Trash2, Check, X } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { cart, useCart } from "@/lib/cart";
 
 const brl = (v: number) => Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -53,7 +54,7 @@ export function CartDrawer() {
             <span className="text-sm tracking-widest text-foreground">SUBTOTAL</span>
             <span className="text-lg text-foreground">{brl(total)}</span>
           </div>
-          <button className="mt-8 w-full rounded-full bg-foreground py-4 text-lg tracking-[0.2em] text-background shadow-lg">FINALIZAR COMPRA</button>
+          <Link to="/carrinho" onClick={cart.close} className="mt-8 block w-full rounded-full bg-foreground py-4 text-center text-lg tracking-[0.2em] text-background shadow-lg">FINALIZAR COMPRA</Link>
           <button onClick={cart.close} className="mx-auto mt-4 block text-xs tracking-wider text-muted-foreground underline">CONTINUAR COMPRANDO</button>
         </div>
       </div>
