@@ -1,0 +1,1 @@
+ALTER TABLE public.site_settings ADD COLUMN payment_logo_url text;

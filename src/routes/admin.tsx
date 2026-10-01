@@ -259,36 +259,47 @@ function Config() {
     queryFn: async () => (await supabase.from("site_settings").select("*").eq("id", 1).maybeSingle()).data,
   });
 
-  async function save(logo_url: string | null) {
+  async function save(patch: { logo_url?: string | null; payment_logo_url?: string | null }) {
     setSaving(true);
-    const { error } = await supabase.from("site_settings").upsert({ id: 1, logo_url, updated_at: new Date().toISOString() });
+    const { error } = await supabase.from("site_settings").upsert({
+      id: 1,
+      logo_url: settings?.logo_url ?? null,
+      payment_logo_url: settings?.payment_logo_url ?? null,
+      ...patch,
+      updated_at: new Date().toISOString(),
+    });
     setSaving(false);
     if (error) return void toast.error("Não foi possível salvar");
-    toast.success("Logo atualizada");
+    toast.success("Imagem atualizada");
     qc.invalidateQueries({ queryKey: ["site_settings"] });
   }
+
+  const bloco = (titulo: string, key: "logo_url" | "payment_logo_url", max: number, remover: string) => (
+    <div className="space-y-4 rounded-xl bg-background p-4 shadow-sm">
+      <Label>{titulo}</Label>
+      <div className="flex h-24 items-center justify-center rounded-lg border bg-muted p-2">
+        {settings?.[key] ? <img src={settings[key]!} alt={titulo} className="max-h-full max-w-full object-contain" /> : <span className="text-sm text-muted-foreground">Nenhuma imagem enviada</span>}
+      </div>
+      <Input
+        type="file"
+        accept="image/*"
+        disabled={saving}
+        onChange={async (e) => {
+          const f = e.target.files?.[0];
+          if (f) await save({ [key]: await fileToDataUrl(f, max) });
+        }}
+      />
+      {settings?.[key] && (
+        <Button variant="outline" onClick={() => save({ [key]: null })} disabled={saving}>{remover}</Button>
+      )}
+    </div>
+  );
 
   return (
     <div className="max-w-xl space-y-6">
       <h1 className="text-2xl font-extrabold">Configuração</h1>
-      <div className="space-y-4 rounded-xl bg-background p-4 shadow-sm">
-        <Label>Logo do cabeçalho (substitui a estrela e o nome)</Label>
-        <div className="flex h-24 items-center justify-center rounded-lg border bg-muted p-2">
-          {settings?.logo_url ? <img src={settings.logo_url} alt="Logo" className="max-h-full max-w-full object-contain" /> : <span className="text-sm text-muted-foreground">Nenhuma logo enviada</span>}
-        </div>
-        <Input
-          type="file"
-          accept="image/*"
-          disabled={saving}
-          onChange={async (e) => {
-            const f = e.target.files?.[0];
-            if (f) await save(await fileToDataUrl(f, 600));
-          }}
-        />
-        {settings?.logo_url && (
-          <Button variant="outline" onClick={() => save(null)} disabled={saving}>Remover logo</Button>
-        )}
-      </div>
+      {bloco("Logo do cabeçalho (substitui a estrela e o nome)", "logo_url", 600, "Remover logo")}
+      {bloco("Bandeira (formas de pagamento no rodapé)", "payment_logo_url", 900, "Remover bandeira")}
     </div>
   );
 }
