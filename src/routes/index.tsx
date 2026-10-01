@@ -67,7 +67,7 @@ function Index() {
           <div className="grid grid-cols-2 gap-3">
             {produtos.map((p) => {
               const k = itens.findIndex((i) => i.id === p.id && i.size === null && i.image === (p.image_url ?? null));
-              const q = k >= 0 ? itens[k].qty : 0;
+              const q = itens[k]?.qty ?? 0;
               return (
               <div key={p.id}>
               <Link to="/produto/$id" params={{ id: p.id }} className="block">
