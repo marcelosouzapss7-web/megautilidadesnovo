@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { StoreHeader } from "@/components/StoreHeader";
+import { StoreFooter } from "@/components/StoreFooter";
 
 export const Route = createFileRoute("/produto/$id")({
   head: () => ({
@@ -78,6 +79,7 @@ function Produto() {
             )}
           </main>
         )}
+        <StoreFooter />
       </div>
     </div>
   );
