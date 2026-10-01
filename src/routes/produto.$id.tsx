@@ -83,11 +83,13 @@ function Produto() {
 
 function Galeria({ imgs, alt }: { imgs: string[]; alt: string }) {
   const [i, setI] = useState(0);
+  const giro = Math.min(imgs.length, 3);
+  const demo = i === 3;
   useEffect(() => {
-    if (imgs.length < 2) return;
-    const t = setInterval(() => setI((v) => (v + 1) % imgs.length), 3000);
+    if (giro < 2 || demo) return;
+    const t = setInterval(() => setI((v) => (v + 1) % giro), 3000);
     return () => clearInterval(t);
-  }, [imgs.length]);
+  }, [giro, demo]);
   if (!imgs.length) return <div className="aspect-square w-full bg-muted" />;
   return (
     <div>
