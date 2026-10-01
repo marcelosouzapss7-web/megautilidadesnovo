@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +33,16 @@ function Produto() {
     queryKey: ["product", id],
     queryFn: async () => (await supabase.from("products").select("*").eq("id", id).maybeSingle()).data,
   });
+  const { data: relacionados = [] } = useQuery({
+    queryKey: ["related-products", id],
+    queryFn: async () => (await supabase
+      .from("products")
+      .select("id,name,price,image_url")
+      .neq("id", id)
+      .order("position", { ascending: true })
+      .order("created_at", { ascending: false })
+      .limit(6)).data ?? [],
+  });
 
   return (
     <div className="min-h-screen bg-muted" style={{ fontFamily: "Montserrat, sans-serif" }}>
@@ -44,7 +54,7 @@ function Produto() {
           <main className="px-3 pb-10">
             <p className="pt-4 text-center text-xs text-muted-foreground">REF: {p.id.slice(0, 8).toUpperCase()}</p>
             <h1 className="px-2 pb-4 text-center text-3xl leading-tight text-foreground" style={bebas}>{p.name}</h1>
-            <Galeria imgs={p.images?.length ? p.images : p.image_url ? [p.image_url] : []} alt={p.name} onPick={setFoto} />
+            <Galeria key={p.id} imgs={p.images?.length ? p.images : p.image_url ? [p.image_url] : []} alt={p.name} onPick={setFoto} />
             {p.has_sizes !== false && (
             <div className="mt-6 rounded-xl border bg-muted/50 p-3">
               <p className="mb-2 text-sm text-foreground">Tamanho</p>
@@ -91,6 +101,32 @@ function Produto() {
                 <p className="text-base">Descrição</p>
                 <p className="whitespace-pre-line text-base leading-relaxed">{p.description}</p>
               </div>
+            )}
+            {relacionados.length > 0 && (
+              <section className="mt-12 border-t pt-6" aria-labelledby="produtos-relacionados">
+                <h2 id="produtos-relacionados" className="mb-4 text-2xl text-foreground" style={bebas}>
+                  VOCÊ TAMBÉM PODE GOSTAR
+                </h2>
+                <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-4" aria-label="Outros produtos">
+                  {relacionados.map((produto) => (
+                    <Link
+                      key={produto.id}
+                      to="/produto/$id"
+                      params={{ id: produto.id }}
+                      onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                      className="w-[44%] shrink-0 snap-start"
+                    >
+                      {produto.image_url ? (
+                        <img src={produto.image_url} alt={produto.name} className="aspect-[3/4] w-full object-cover" />
+                      ) : (
+                        <div className="aspect-[3/4] w-full bg-muted" />
+                      )}
+                      <p className="mt-2 line-clamp-2 min-h-9 text-[13px] font-medium leading-snug text-foreground">{produto.name}</p>
+                      <p className="mt-1 text-base font-bold text-primary">{brl(Number(produto.price))}</p>
+                    </Link>
+                  ))}
+                </div>
+              </section>
             )}
           </main>
         )}
