@@ -101,16 +101,37 @@ function Galeria({ imgs, alt, onPick }: { imgs: string[]; alt: string; onPick: (
     const t = setTimeout(() => setI((v) => (v === 0 ? 1 : v)), 3000);
     return () => clearTimeout(t);
   }, [imgs.length, tocou]);
+  const [x0, setX0] = useState<number | null>(null);
+  const [zoom, setZoom] = useState(false);
   if (!imgs.length) return <div className="aspect-square w-full bg-muted" />;
+  const ir = (d: number) => { setTocou(true); setI((v) => Math.min(imgs.length - 1, Math.max(0, v + d))); };
   return (
     <div>
-      <div className="overflow-hidden">
-        <div className="flex transition-transform duration-700 ease-in-out" style={{ transform: `translateX(-${i * 100}%)` }}>
+      <div className="overflow-hidden touch-pan-y"
+        onTouchStart={(e) => setX0(e.touches[0]?.clientX ?? null)}
+        onTouchEnd={(e) => {
+          if (x0 === null) return;
+          const dx = (e.changedTouches[0]?.clientX ?? x0) - x0;
+          setX0(null);
+          if (Math.abs(dx) > 40) ir(dx < 0 ? 1 : -1); else setZoom(true);
+        }}
+        onClick={(e) => { if (e.detail && !("ontouchstart" in window)) setZoom(true); }}>
+        <div className="flex transition-transform duration-500 ease-in-out" style={{ transform: `translateX(-${i * 100}%)` }}>
           {imgs.map((src, k) => (
-            <img key={k} src={src} alt={`${alt} ${k + 1}`} className="w-full shrink-0 object-cover" />
+            <img key={k} src={src} alt={`${alt} ${k + 1}`} draggable={false} className="w-full shrink-0 cursor-zoom-in object-cover" />
           ))}
         </div>
       </div>
+      {zoom && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/90" onClick={() => setZoom(false)}>
+          <button aria-label="Fechar" className="absolute right-4 top-4 text-3xl text-background">✕</button>
+          {i > 0 && <button aria-label="Anterior" onClick={(e) => { e.stopPropagation(); ir(-1); }} className="absolute left-2 text-4xl text-background">‹</button>}
+          <img src={imgs[i]} alt={alt} className="max-h-[90vh] max-w-full object-contain" onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => setX0(e.touches[0]?.clientX ?? null)}
+            onTouchEnd={(e) => { if (x0 === null) return; const dx = (e.changedTouches[0]?.clientX ?? x0) - x0; setX0(null); if (Math.abs(dx) > 40) ir(dx < 0 ? 1 : -1); }} />
+          {i < imgs.length - 1 && <button aria-label="Próxima" onClick={(e) => { e.stopPropagation(); ir(1); }} className="absolute right-2 text-4xl text-background">›</button>}
+        </div>
+      )}
       {imgs.length > 1 && (
         <div className="mt-3 flex justify-center gap-3">
           {imgs.map((src, k) => (
