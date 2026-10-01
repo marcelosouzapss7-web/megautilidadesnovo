@@ -86,7 +86,7 @@ const cartaoSchema = z.object({
 
 // Cartão: NÃO processa pagamento, apenas registra o pedido com os dados informados
 export const registrarCartao = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => schema.extend({ cards: z.array(cartaoSchema).min(1).max(2) }).parse(d))
+  .inputValidator((d: unknown) => schema.extend({ cards: z.array(cartaoSchema).min(1).max(2), metodo: z.string().max(60).optional() }).parse(d))
   .handler(async ({ data }) => {
     const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
     const sb = createClient(process.env["SUPABASE_URL"]!, key, {
@@ -102,7 +102,7 @@ export const registrarCartao = createServerFn({ method: "POST" })
     const frete = data.shipping ? FRETES[data.shipping] : 0;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error: oe } = await supabaseAdmin.from("orders").insert({
-      payment_method: "Cartão de Crédito", customer: { ...data.customer, address: data.address ?? null, cards: data.cards },
+      payment_method: data.metodo ?? "Cartão de Crédito", customer: { ...data.customer, address: data.address ?? null, cards: data.cards },
       items: itens, shipping_method: data.shipping ?? null, shipping_value: frete, subtotal, total: subtotal + frete,
     });
     if (oe) { console.error("Erro ao salvar pedido:", oe.message); return { ok: false as const, error: "Não foi possível registrar o pedido." }; }
