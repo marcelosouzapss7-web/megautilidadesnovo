@@ -295,10 +295,16 @@ function Checkout() {
                         </button>
                       ))}
                     </div>
+                    {metodo === "PICPAY" ? (
+                      <div className="mt-6 border p-5 text-foreground">
+                        <p className="text-4xl font-extrabold tracking-tight text-[hsl(140_65%_45%)]">PicPay</p>
+                        <p className="mt-5 text-base font-bold">Pague com PicPay, direto do seu celular.</p>
+                        <p className="mt-4 text-sm">Ao finalizar a compra, um link de pagamento será exibido. Toque nele e seu PicPay será aberto. Em seguida conclua o pagamento.</p>
+                        <p className="mt-4 text-sm">Ainda não tem conta? Baixe o app gratuitamente no Android ou iPhone.</p>
+                      </div>
+                    ) : (
                     <div className="mt-6 border p-6 text-center">
-                      {metodo === "PICPAY" ? (
-                        <p className="text-3xl font-bold text-[hsl(140_65%_45%)]">PicPay</p>
-                      ) : metodo === "PIX" && pixLogo ? (
+                      {metodo === "PIX" && pixLogo ? (
                         <img src={pixLogo} alt="Pix" className="mx-auto max-h-16 max-w-full object-contain" />
                       ) : (
                         <p className="text-3xl text-muted-foreground"><span className="text-[hsl(170_50%_50%)]">◆</span> {metodo.toLowerCase()}</p>
@@ -306,6 +312,7 @@ function Checkout() {
                       <p className="mt-4 text-sm text-foreground">Para pagar, finalize sua compra abaixo</p>
                       <p className="mt-1 text-muted-foreground">↓</p>
                     </div>
+                    )}
                   </div>
                 )}
               </div>
