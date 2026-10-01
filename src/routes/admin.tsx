@@ -150,6 +150,7 @@ function Produtos() {
   const qc = useQueryClient();
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
+  const [oldPrice, setOldPrice] = useState("");
   const [fotos, setFotos] = useState<(string | null)[]>([null, null, null, null]);
   const [desc, setDesc] = useState("");
   const [saving, setSaving] = useState(false);
@@ -163,6 +164,7 @@ function Produtos() {
     setEditId(p.id);
     setName(p.name);
     setPrice(String(p.price).replace(".", ","));
+    setOldPrice(p.old_price != null ? String(p.old_price).replace(".", ",") : "");
     setDesc(p.description ?? "");
     const imgs = p.images?.length ? p.images : p.image_url ? [p.image_url] : [];
     setFotos([0, 1, 2, 3].map((i) => imgs[i] ?? null));
@@ -170,7 +172,7 @@ function Produtos() {
   }
 
   function cancelEdit(form?: HTMLFormElement | null) {
-    setEditId(null); setName(""); setPrice(""); setFotos([null, null, null, null]); setDesc("");
+    setEditId(null); setName(""); setPrice(""); setOldPrice(""); setFotos([null, null, null, null]); setDesc("");
     form?.reset();
   }
 
@@ -178,8 +180,10 @@ function Produtos() {
     e.preventDefault();
     const valor = Number(price.replace(",", "."));
     if (!name.trim() || isNaN(valor)) return void toast.error("Preencha nome e preço corretamente");
+    const antigo = oldPrice.trim() ? Number(oldPrice.replace(",", ".")) : null;
+    if (antigo !== null && isNaN(antigo)) return void toast.error("Valor 'De' inválido");
     setSaving(true);
-    const base = { name: name.trim().slice(0, 200), price: valor, description: desc.trim() || null };
+    const base = { name: name.trim().slice(0, 200), price: valor, old_price: antigo, description: desc.trim() || null };
     const images = fotos.filter((f): f is string => !!f);
     const dados = { ...base, images, image_url: images[0] ?? null };
     const { error } = editId
@@ -207,6 +211,10 @@ function Produtos() {
         <div className="space-y-2 sm:col-span-2">
           <Label>Nome do produto</Label>
           <Input value={name} onChange={(e) => setName(e.target.value)} required maxLength={200} />
+        </div>
+        <div className="space-y-2 sm:col-span-2">
+          <Label>De: (R$) — valor antigo, opcional</Label>
+          <Input value={oldPrice} onChange={(e) => setOldPrice(e.target.value)} placeholder="199,99" inputMode="decimal" />
         </div>
         <div className="space-y-2">
           <Label>Preço (R$)</Label>

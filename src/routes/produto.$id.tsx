@@ -57,8 +57,14 @@ function Produto() {
               </div>
             </div>
             <div className="mt-8 text-center">
+              {p.old_price != null && Number(p.old_price) > Number(p.price) && (
+                <p className="text-lg text-muted-foreground" style={bebas}>DE: <span className="line-through">{brl(Number(p.old_price))}</span></p>
+              )}
               <p className="text-5xl text-primary" style={bebas}>{brl(p.price)}</p>
-              <p className="text-lg text-foreground" style={bebas}>OU 3X DE {brl(p.price / 3)}</p>
+              <p className="text-lg text-foreground" style={bebas}>OU 6X DE <b>{brl(Math.floor((Number(p.price) / 6) * 100) / 100)}</b></p>
+              {p.old_price != null && Number(p.old_price) > Number(p.price) && (
+                <span className="mt-1 inline-block rounded-full border px-4 py-1 text-sm text-muted-foreground" style={bebas}>ECONOMIA DE {brl(Number(p.old_price) - Number(p.price))}</span>
+              )}
               <button
                 onClick={() => {
                   if (!tam) { setAviso(true); return; }
