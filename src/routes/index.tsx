@@ -29,7 +29,7 @@ const brl = (v: number) => Number(v).toLocaleString("pt-BR", { style: "currency"
 function Index() {
   const { data: produtos = [] } = useQuery({
     queryKey: ["products"],
-    queryFn: async () => (await supabase.from("products").select("*").order("created_at", { ascending: false })).data ?? [],
+    queryFn: async () => (await supabase.from("products").select("*").order("position", { ascending: true }).order("created_at", { ascending: false })).data ?? [],
   });
 
   return (
