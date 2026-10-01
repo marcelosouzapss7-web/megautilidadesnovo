@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { criarPix, registrarCartao, checarPix } from "@/lib/ironpay.functions";
+import { criarPix, registrarCartao, registrarRetirada, checarPix } from "@/lib/ironpay.functions";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
@@ -113,7 +113,7 @@ function Checkout() {
       const r = await gerarPix({ data: {
         items: items.map((i) => ({ id: i.id, qty: i.qty, size: i.size })),
         shipping: freteValor ? (frete as "Sedex" | "Motoboy") : undefined,
-        address: modo === "retirar" ? "Retirar na loja" : end ? `${end}, ${num}${comp ? " - " + comp : ""} (CEP ${cep}) · Destinatário: ${dest}`.slice(0, 400) : undefined,
+        address: modo === "retirar" ? "Retirada em loja Ribeirão Preto — DUQUE DE CAXIAS, 416 CENTRO" : end ? `${end}, ${num}${comp ? " - " + comp : ""} (CEP ${cep}) · Destinatário: ${dest}`.slice(0, 400) : undefined,
         customer: {
           name: `${d.nome} ${d.sobrenome}`.trim(), email,
           phone: d.telefone.replace(/\D/g, ""), document: d.cpf.replace(/\D/g, ""),
@@ -126,7 +126,21 @@ function Checkout() {
   };
   const [cartoes, setCartoes] = useState<Cartao[]>([novoCartao(), novoCartao()]);
   const [cartaoOk, setCartaoOk] = useState(false);
+  const [retiradaOk, setRetiradaOk] = useState(false);
   const enviarCartao = useServerFn(registrarCartao);
+  const enviarRetirada = useServerFn(registrarRetirada);
+  const pagarRetirada = async () => {
+    setPixErro(""); setGerando(true);
+    try {
+      const r = await enviarRetirada({ data: {
+        items: items.map((i) => ({ id: i.id, qty: i.qty, size: i.size })),
+        address: "Retirada em loja Ribeirão Preto — DUQUE DE CAXIAS, 416 CENTRO",
+        customer: { name: `${d.nome} ${d.sobrenome}`.trim(), email, phone: d.telefone.replace(/\D/g, ""), document: d.cpf.replace(/\D/g, ""), zip: cep.replace(/\D/g, "") || undefined, number: num || undefined, complement: comp || undefined },
+      } });
+      if (r.ok) setRetiradaOk(true); else setPixErro(r.error);
+    } catch { setPixErro("Confira os dados e tente novamente."); }
+    setGerando(false);
+  };
   const pagarCartao = async () => {
     setPixErro("");
     const lista = (doisCartoes ? cartoes : cartoes.slice(0, 1)).map((c) => ({ ...c, cpf: c.cpf || d.cpf, bandeira: metodo === "CARTÃO MERCADO SHOPPING" ? "CredSystem" : c.bandeira, valor: doisCartoes ? (c.valor || (totalGeral / 2).toFixed(2).replace(".", ",")) : brl(totalGeral) }));
@@ -136,7 +150,7 @@ function Checkout() {
       const r = await enviarCartao({ data: {
         items: items.map((i) => ({ id: i.id, qty: i.qty, size: i.size })),
         shipping: freteValor ? (frete as "Sedex" | "Motoboy") : undefined,
-        address: modo === "retirar" ? "Retirar na loja" : end ? `${end}, ${num}${comp ? " - " + comp : ""} (CEP ${cep}) · Destinatário: ${dest}`.slice(0, 400) : undefined,
+        address: modo === "retirar" ? "Retirada em loja Ribeirão Preto — DUQUE DE CAXIAS, 416 CENTRO" : end ? `${end}, ${num}${comp ? " - " + comp : ""} (CEP ${cep}) · Destinatário: ${dest}`.slice(0, 400) : undefined,
         customer: { name: `${d.nome} ${d.sobrenome}`.trim(), email, phone: d.telefone.replace(/\D/g, ""), document: d.cpf.replace(/\D/g, ""), zip: cep.replace(/\D/g, "") || undefined, number: num || undefined, complement: comp || undefined },
         cards: lista, metodo: metodo === "CARTÃO MERCADO SHOPPING" ? "Cartão Mercado Shopping (CredSystem)" : "Cartão de Crédito",
       } });
@@ -249,7 +263,7 @@ function Checkout() {
                     <button onClick={() => setPag(false)} className="text-xs font-bold text-foreground">Editar</button>
                   </div>
                   {modo === "retirar" ? (
-                    <p className="mt-5 text-sm text-foreground">Retirada em loja — São Paulo (Capital)</p>
+                    <p className="mt-5 text-sm text-foreground">Retirada em loja Ribeirão Preto — DUQUE DE CAXIAS, 416 CENTRO</p>
                   ) : (
                     <div className="mt-5 flex text-sm text-foreground">
                       <div className="flex-1 space-y-1 pr-3">
@@ -279,7 +293,7 @@ function Checkout() {
                     </div>
                     {modo === "retirar" ? (
                       <>
-                        <p className="mt-5 text-center">Retirada em loja — apenas em São Paulo (Capital). Consulte condições.</p>
+                        <p className="mt-5 text-center">Retirada em loja Ribeirão Preto — DUQUE DE CAXIAS, 416 CENTRO. Consulte condições.</p>
                         <div className="mt-4 flex justify-end">
                           <button onClick={irPagamento} className="rounded bg-primary px-5 py-3 text-base text-primary-foreground">Ir Para O Pagamento</button>
                         </div>
@@ -481,10 +495,11 @@ function Checkout() {
                 </div>
                 <button disabled={gerando} onClick={() => {
                   if (!pag) return;
+                  if (modo === "retirar") return void pagarRetirada();
                   if (metodo === "PIX") return void pagarPix();
                   if (metodo === "CARTÃO DE CRÉDITO" || metodo === "CARTÃO MERCADO SHOPPING") return void pagarCartao();
                   setIndisp(metodo === "PICPAY" || metodo === "PIX 4X SEM JUROS" ? "erro" : "indisp");
-                }} className="mt-5 w-full rounded bg-primary py-3 text-lg text-primary-foreground disabled:opacity-60">{gerando ? "Aguarde…" : "Finalizar Compra"}</button>
+                }} className="mt-5 w-full rounded bg-primary py-3 text-lg text-primary-foreground disabled:opacity-60">{gerando ? "Aguarde…" : modo === "retirar" ? "Finalizar" : "Finalizar Compra"}</button>
                 {pixErro && <p className="mt-2 text-center text-sm text-destructive">{pixErro}</p>}
                 {gerando && (
                   <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/70 p-4">
@@ -495,6 +510,16 @@ function Checkout() {
                   </div>
                 )}
                 {pix && <PixTela pix={pix} copiado={copiado} onCopy={() => { navigator.clipboard.writeText(pix.pixCode); setCopiado(true); }} onClose={() => setPix(null)} />}
+                {retiradaOk && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-6">
+                    <div className="w-full max-w-sm rounded-lg bg-background p-6 text-center shadow-xl">
+                      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 text-3xl font-bold text-primary">✓</div>
+                      <h3 className="mt-4 text-xl font-bold text-foreground">Pedido recebido!</h3>
+                      <p className="mt-2 text-sm text-muted-foreground">Seu pedido está em análise. Em breve entraremos em contato pelo e-mail informado.</p>
+                      <Link to="/" className="mt-6 block w-full rounded bg-primary py-3 font-bold text-primary-foreground">Voltar para a página inicial</Link>
+                    </div>
+                  </div>
+                )}
                 {cartaoOk && (
                   <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-6">
                     <div className="w-full max-w-sm rounded-lg bg-background p-6 text-center shadow-xl">

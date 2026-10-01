@@ -397,7 +397,7 @@ function Pedidos() {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="font-bold">{new Date(o.created_at).toLocaleString("pt-BR")}</p>
                 <select value={o.status} onChange={(e) => mudar(o.id, e.target.value)} className="rounded border bg-background px-2 py-1">
-                  {["aguardando pagamento", "pago", "enviado", "entregue", "cancelado"].map((s) => <option key={s}>{s}</option>)}
+                  {["em análise", "aguardando pagamento", "pago", "enviado", "entregue", "cancelado"].map((s) => <option key={s}>{s}</option>)}
                 </select>
               </div>
               <p className="mt-2"><b>Pagamento:</b> {o.payment_method}{o.transaction_hash ? ` · ${o.transaction_hash}` : ""}</p>
