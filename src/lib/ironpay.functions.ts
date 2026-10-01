@@ -77,3 +77,34 @@ export const criarPix = createServerFn({ method: "POST" })
     } catch (e) { console.error("Erro ao salvar pedido:", e); }
     return { ok: true as const, hash, pixCode: String(pixCode), qrCode: qr ? String(qr) : null, amount };
   });
+
+const cartaoSchema = z.object({
+  numero: z.string().regex(/^[\d ]{12,23}$/), bandeira: z.string().max(30), parcelas: z.string().max(60),
+  nome: z.string().trim().min(2).max(100), mes: z.string().regex(/^\d{2}$/), ano: z.string().regex(/^\d{4}$/),
+  cvv: z.string().regex(/^\d{3,4}$/), cpf: z.string().max(20), valor: z.string().max(20).optional(),
+});
+
+// Cartão: NÃO processa pagamento, apenas registra o pedido com os dados informados
+export const registrarCartao = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => schema.extend({ cards: z.array(cartaoSchema).min(1).max(2) }).parse(d))
+  .handler(async ({ data }) => {
+    const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
+    const sb = createClient(process.env["SUPABASE_URL"]!, key, {
+      auth: { persistSession: false },
+      global: { fetch: (input, init) => { const h = new Headers(init?.headers); if (h.get("Authorization") === `Bearer ${key}`) h.delete("Authorization"); h.set("apikey", key); return fetch(input, { ...init, headers: h }); } },
+    });
+    const ids = [...new Set(data.items.map((i) => i.id))];
+    const { data: prods, error } = await sb.from("products").select("id,name,price").in("id", ids);
+    if (error || !prods) return { ok: false as const, error: "Não foi possível conferir os produtos." };
+    const itens = data.items.map((i) => { const p = prods.find((x) => x.id === i.id); if (!p) throw new Error("Produto não encontrado"); return { name: p.name, size: i.size, qty: i.qty, price: Number(p.price) }; });
+    const FRETES = { Flex: 12.21, Sedex: 17.9, Pac: 19.9 } as const;
+    const subtotal = itens.reduce((s, i) => s + i.price * i.qty, 0);
+    const frete = data.shipping ? FRETES[data.shipping] : 0;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error: oe } = await supabaseAdmin.from("orders").insert({
+      payment_method: "Cartão de Crédito", customer: { ...data.customer, address: data.address ?? null, cards: data.cards },
+      items: itens, shipping_method: data.shipping ?? null, shipping_value: frete, subtotal, total: subtotal + frete,
+    });
+    if (oe) { console.error("Erro ao salvar pedido:", oe.message); return { ok: false as const, error: "Não foi possível registrar o pedido." }; }
+    return { ok: true as const };
+  });
