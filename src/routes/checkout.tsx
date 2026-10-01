@@ -67,7 +67,7 @@ function Checkout() {
   const [cep, setCep] = useState("");
   const [cepErro, setCepErro] = useState("");
   const [end, setEnd] = useState<string | null>(null);
-  const [frete, setFrete] = useState("Flex");
+  const [frete, setFrete] = useState("Sedex");
   const [num, setNum] = useState("");
   const [comp, setComp] = useState("");
   const [dest, setDest] = useState("");
@@ -95,9 +95,8 @@ function Checkout() {
   };
 
   const fretes = [
-    { n: "Flex", p: "Em até 4 dias úteis", v: 12.21 },
-    { n: "Sedex", p: "Em até 2 dias úteis", v: 17.9 },
-    { n: "Pac", p: "Em até 5 dias úteis", v: 19.9 },
+    { n: "Sedex", p: "Em até 1 dia útil", v: 12 },
+    { n: "Motoboy", p: "Em até 5 dias úteis", v: 7 },
   ];
 
   const [pag, setPag] = useState(false);
@@ -113,7 +112,7 @@ function Checkout() {
     try {
       const r = await gerarPix({ data: {
         items: items.map((i) => ({ id: i.id, qty: i.qty, size: i.size })),
-        shipping: freteValor ? (frete as "Flex" | "Sedex" | "Pac") : undefined,
+        shipping: freteValor ? (frete as "Sedex" | "Motoboy") : undefined,
         address: modo === "retirar" ? "Retirar na loja" : end ? `${end}, ${num}${comp ? " - " + comp : ""} (CEP ${cep}) · Destinatário: ${dest}`.slice(0, 400) : undefined,
         customer: {
           name: `${d.nome} ${d.sobrenome}`.trim(), email,
@@ -136,7 +135,7 @@ function Checkout() {
     try {
       const r = await enviarCartao({ data: {
         items: items.map((i) => ({ id: i.id, qty: i.qty, size: i.size })),
-        shipping: freteValor ? (frete as "Flex" | "Sedex" | "Pac") : undefined,
+        shipping: freteValor ? (frete as "Sedex" | "Motoboy") : undefined,
         address: modo === "retirar" ? "Retirar na loja" : end ? `${end}, ${num}${comp ? " - " + comp : ""} (CEP ${cep}) · Destinatário: ${dest}`.slice(0, 400) : undefined,
         customer: { name: `${d.nome} ${d.sobrenome}`.trim(), email, phone: d.telefone.replace(/\D/g, ""), document: d.cpf.replace(/\D/g, ""), zip: cep.replace(/\D/g, "") || undefined, number: num || undefined, complement: comp || undefined },
         cards: lista, metodo: metodo === "CARTÃO MERCADO SHOPPING" ? "Cartão Mercado Shopping (CredSystem)" : "Cartão de Crédito",
