@@ -71,7 +71,7 @@ function Produto() {
               </div>
             </div>
             {p.description && (
-              <div className="mt-12 text-foreground">
+              <div className="mt-12 text-muted-foreground">
                 <p className="text-base">Descrição</p>
                 <p className="whitespace-pre-line text-base leading-relaxed">{p.description}</p>
               </div>
