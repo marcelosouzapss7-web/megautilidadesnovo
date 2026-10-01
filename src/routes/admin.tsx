@@ -149,7 +149,7 @@ function Produtos() {
   const qc = useQueryClient();
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
-  const [file, setFile] = useState<File | null>(null);
+  const [fotos, setFotos] = useState<(string | null)[]>([null, null, null, null]);
   const [desc, setDesc] = useState("");
   const [saving, setSaving] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -163,12 +163,13 @@ function Produtos() {
     setName(p.name);
     setPrice(String(p.price).replace(".", ","));
     setDesc(p.description ?? "");
-    setFile(null);
+    const imgs = p.images?.length ? p.images : p.image_url ? [p.image_url] : [];
+    setFotos([0, 1, 2, 3].map((i) => imgs[i] ?? null));
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function cancelEdit(form?: HTMLFormElement | null) {
-    setEditId(null); setName(""); setPrice(""); setFile(null); setDesc("");
+    setEditId(null); setName(""); setPrice(""); setFotos([null, null, null, null]); setDesc("");
     form?.reset();
   }
 
@@ -178,14 +179,11 @@ function Produtos() {
     if (!name.trim() || isNaN(valor)) return void toast.error("Preencha nome e preço corretamente");
     setSaving(true);
     const base = { name: name.trim().slice(0, 200), price: valor, description: desc.trim() || null };
-    let error;
-    if (editId) {
-      const upd = file ? { ...base, image_url: await fileToDataUrl(file) } : base;
-      ({ error } = await supabase.from("products").update(upd).eq("id", editId));
-    } else {
-      const image_url = file ? await fileToDataUrl(file) : null;
-      ({ error } = await supabase.from("products").insert({ ...base, image_url }));
-    }
+    const images = fotos.filter((f): f is string => !!f);
+    const dados = { ...base, images, image_url: images[0] ?? null };
+    const { error } = editId
+      ? await supabase.from("products").update(dados).eq("id", editId)
+      : await supabase.from("products").insert(dados);
     setSaving(false);
     if (error) return void toast.error("Não foi possível salvar");
     toast.success(editId ? "Produto atualizado" : "Produto adicionado");
@@ -213,9 +211,25 @@ function Produtos() {
           <Label>Preço (R$)</Label>
           <Input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="69,89" required inputMode="decimal" />
         </div>
-        <div className="space-y-2">
-          <Label>{editId ? "Nova foto (opcional)" : "Foto"}</Label>
-          <Input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+        <div className="space-y-2 sm:col-span-2">
+          <Label>Fotos (até 4)</Label>
+          <div className="grid grid-cols-4 gap-2">
+            {fotos.map((f, i) => (
+              <div key={i} className="space-y-1">
+                <label className="relative flex aspect-[3/4] cursor-pointer items-center justify-center overflow-hidden rounded-lg border bg-muted text-xs text-muted-foreground">
+                  {f ? <img src={f} alt={`Foto ${i + 1}`} className="h-full w-full object-cover" /> : <span>Foto {i + 1}</span>}
+                  <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const url = await fileToDataUrl(file);
+                    setFotos((prev) => prev.map((x, j) => (j === i ? url : x)));
+                    e.target.value = "";
+                  }} />
+                </label>
+                {f && <button type="button" className="w-full text-xs text-destructive" onClick={() => setFotos((prev) => prev.map((x, j) => (j === i ? null : x)))}>Remover</button>}
+              </div>
+            ))}
+          </div>
         </div>
         <div className="space-y-2 sm:col-span-2">
           <Label>Descrição</Label>
