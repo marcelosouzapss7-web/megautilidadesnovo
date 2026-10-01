@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 import { StoreHeader } from "@/components/StoreHeader";
 import { StoreFooter } from "@/components/StoreFooter";
@@ -89,6 +91,11 @@ function Checkout() {
   const [pag, setPag] = useState(false);
   const [metodo, setMetodo] = useState("PIX");
   const [indisp, setIndisp] = useState(false);
+  const { data: settings } = useQuery({
+    queryKey: ["site_settings"],
+    queryFn: async () => (await supabase.from("site_settings").select("*").eq("id", 1).maybeSingle()).data,
+  });
+  const pixLogo = (settings as any)?.pix_logo_url as string | null | undefined;
   const irPagamento = () => {
     if (modo === "receber") {
       if (!end) { setCepErro("Campo obrigatório."); return; }
@@ -291,6 +298,8 @@ function Checkout() {
                     <div className="mt-6 border p-6 text-center">
                       {metodo === "PICPAY" ? (
                         <p className="text-3xl font-bold text-[hsl(140_65%_45%)]">PicPay</p>
+                      ) : metodo === "PIX" && pixLogo ? (
+                        <img src={pixLogo} alt="Pix" className="mx-auto max-h-16 max-w-full object-contain" />
                       ) : (
                         <p className="text-3xl text-muted-foreground"><span className="text-[hsl(170_50%_50%)]">◆</span> {metodo.toLowerCase()}</p>
                       )}
