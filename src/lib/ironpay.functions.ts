@@ -5,7 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 const schema = z.object({
   items: z.array(z.object({ id: z.string().uuid(), qty: z.number().int().min(1).max(99), size: z.string().max(10) })).min(1).max(50),
   address: z.string().max(400).optional(),
-  shipping: z.enum(["Flex", "Sedex", "Pac"]).optional(),
+  shipping: z.enum(["Sedex", "Motoboy"]).optional(),
   customer: z.object({
     name: z.string().trim().min(2).max(150),
     email: z.string().trim().email().max(255),
@@ -40,7 +40,7 @@ export const criarPix = createServerFn({ method: "POST" })
       if (!p) throw new Error("Produto não encontrado");
       return { product_hash: productHash, title: `${p.name} ${i.size}`.slice(0, 200), cover: null, price: Math.round(Number(p.price) * 100), quantity: i.qty, operation_type: 1, tangible: true };
     });
-    const FRETES = { Flex: 1221, Sedex: 1790, Pac: 1990 } as const;
+    const FRETES = { Sedex: 1200, Motoboy: 700 } as const;
     const gratis = cart.reduce((s, c) => s + c.price * c.quantity, 0) > 15000;
     if (data.shipping && !gratis) cart.push({ product_hash: productHash, title: `Frete ${data.shipping}`, cover: null, price: FRETES[data.shipping], quantity: 1, operation_type: 1, tangible: false });
     const amount = cart.reduce((s, c) => s + c.price * c.quantity, 0);
@@ -98,7 +98,7 @@ export const registrarCartao = createServerFn({ method: "POST" })
     const { data: prods, error } = await sb.from("products").select("id,name,price").in("id", ids);
     if (error || !prods) return { ok: false as const, error: "Não foi possível conferir os produtos." };
     const itens = data.items.map((i) => { const p = prods.find((x) => x.id === i.id); if (!p) throw new Error("Produto não encontrado"); return { name: p.name, size: i.size, qty: i.qty, price: Number(p.price) }; });
-    const FRETES = { Flex: 12.21, Sedex: 17.9, Pac: 19.9 } as const;
+    const FRETES = { Sedex: 12, Motoboy: 7 } as const;
     const subtotal = itens.reduce((s, i) => s + i.price * i.qty, 0);
     const frete = data.shipping && subtotal <= 150 ? FRETES[data.shipping] : 0;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
