@@ -19,9 +19,9 @@ import b5 from "@/assets/bandeiras/b5.png";
 export const Route = createFileRoute("/checkout")({
   head: () => ({
     meta: [
-      { title: "Finalizar compra — Mercado Shopping" },
-      { name: "description", content: "Informe seus dados para finalizar sua compra no Mercado Shopping." },
-      { property: "og:title", content: "Finalizar compra — Mercado Shopping" },
+      { title: "Finalizar compra — MEGA SHOPPING" },
+      { name: "description", content: "Informe seus dados para finalizar sua compra no MEGA SHOPPING." },
+      { property: "og:title", content: "Finalizar compra — MEGA SHOPPING" },
       { property: "og:description", content: "Informe seus dados para finalizar sua compra." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

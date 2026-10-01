@@ -15,10 +15,10 @@ export const Route = createFileRoute("/admin")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Painel Admin — Mercado Shopping" },
-      { name: "description", content: "Painel administrativo da loja Mercado Shopping." },
-      { property: "og:title", content: "Painel Admin — Mercado Shopping" },
-      { property: "og:description", content: "Painel administrativo da loja Mercado Shopping." },
+      { title: "Painel Admin — MEGA SHOPPING" },
+      { name: "description", content: "Painel administrativo da loja MEGA SHOPPING." },
+      { property: "og:title", content: "Painel Admin — MEGA SHOPPING" },
+      { property: "og:description", content: "Painel administrativo da loja MEGA SHOPPING." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
@@ -286,13 +286,14 @@ function Config() {
     queryFn: async () => (await supabase.from("site_settings").select("*").eq("id", 1).maybeSingle()).data,
   });
 
-  async function save(patch: { logo_url?: string | null; payment_logo_url?: string | null; pix_logo_url?: string | null }) {
+  async function save(patch: { logo_url?: string | null; payment_logo_url?: string | null; pix_logo_url?: string | null; hero_image_url?: string | null }) {
     setSaving(true);
     const { error } = await supabase.from("site_settings").upsert({
       id: 1,
       logo_url: settings?.logo_url ?? null,
       payment_logo_url: settings?.payment_logo_url ?? null,
       pix_logo_url: (settings as any)?.pix_logo_url ?? null,
+      hero_image_url: (settings as any)?.hero_image_url ?? null,
       ...patch,
       updated_at: new Date().toISOString(),
     });
@@ -302,7 +303,7 @@ function Config() {
     qc.invalidateQueries({ queryKey: ["site_settings"] });
   }
 
-  const bloco = (titulo: string, key: "logo_url" | "payment_logo_url" | "pix_logo_url", max: number, remover: string) => (
+  const bloco = (titulo: string, key: "logo_url" | "payment_logo_url" | "pix_logo_url" | "hero_image_url", max: number, remover: string) => (
     <div className="space-y-4 rounded-xl bg-background p-4 shadow-sm">
       <Label>{titulo}</Label>
       <div className="flex h-24 items-center justify-center rounded-lg border bg-muted p-2">
@@ -327,6 +328,7 @@ function Config() {
     <div className="max-w-xl space-y-6">
       <h1 className="text-2xl font-extrabold">Configuração</h1>
       {bloco("Logo do cabeçalho (substitui a estrela e o nome)", "logo_url", 600, "Remover logo")}
+      {bloco("Imagem principal (aparece abaixo do cabeçalho)", "hero_image_url", 1600, "Remover imagem principal")}
       {bloco("Bandeira (formas de pagamento no rodapé)", "payment_logo_url", 900, "Remover bandeira")}
       {bloco("Pix (imagem na forma de pagamento PIX)", "pix_logo_url", 600, "Remover imagem do Pix")}
     </div>

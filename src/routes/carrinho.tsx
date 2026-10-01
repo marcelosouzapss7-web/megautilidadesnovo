@@ -7,9 +7,9 @@ import { cart, useCart } from "@/lib/cart";
 export const Route = createFileRoute("/carrinho")({
   head: () => ({
     meta: [
-      { title: "Meu Carrinho — Mercado Shopping" },
-      { name: "description", content: "Revise seus produtos, calcule a entrega e feche seu pedido no Mercado Shopping." },
-      { property: "og:title", content: "Meu Carrinho — Mercado Shopping" },
+      { title: "Meu Carrinho — MEGA SHOPPING" },
+      { name: "description", content: "Revise seus produtos, calcule a entrega e feche seu pedido no MEGA SHOPPING." },
+      { property: "og:title", content: "Meu Carrinho — MEGA SHOPPING" },
       { property: "og:description", content: "Revise seus produtos, calcule a entrega e feche seu pedido." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -61,7 +61,7 @@ function Carrinho() {
                 {it.image ? <img src={it.image} alt={it.name} className="h-32 w-[88px] object-cover" /> : <div className="h-32 w-[88px] bg-muted" />}
                 <div className="flex-1">
                   <p className="text-sm leading-5 text-foreground">{it.name} {it.size}</p>
-                  <p className="mt-2 text-xs font-bold italic text-foreground">Mercado Shopping</p>
+                  <p className="mt-2 text-xs font-bold italic text-foreground">MEGA SHOPPING</p>
                   <p className="text-lg font-bold text-foreground">{brl(it.price * it.qty)}</p>
                   <button onClick={() => cart.remove(k)} className="text-xs text-foreground underline">remover</button>
                 </div>
