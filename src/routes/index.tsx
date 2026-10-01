@@ -66,14 +66,14 @@ function Index() {
             NOSSOS PRODUTOS
           </h1>
           <div className="grid grid-cols-2 gap-3">
-            {produtos.map((p) => {
+            {produtos.map((p, idx) => {
               const k = itens.findIndex((i) => i.id === p.id && i.size === null && i.image === (p.image_url ?? null));
               const q = itens[k]?.qty ?? 0;
               return (
               <div key={p.id}>
               <Link to="/produto/$id" params={{ id: p.id }} className="block">
                 {p.image_url ? (
-                  <img src={p.image_url} alt={p.name} className="aspect-[3/4] w-full object-cover" />
+                  <img src={p.image_url} alt={p.name} loading={idx < 4 ? "eager" : "lazy"} fetchPriority={idx < 2 ? "high" : "auto"} className="aspect-[3/4] w-full object-cover" />
                 ) : (
                   <div className="aspect-[3/4] w-full bg-muted" />
                 )}
