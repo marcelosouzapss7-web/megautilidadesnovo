@@ -399,6 +399,25 @@ function Checkout() {
                           <button type="button" onClick={() => setDoisCartoes((v) => !v)} className="w-full border border-primary/40 py-2.5 font-bold text-primary/60">{doisCartoes ? "Pagar usando um cartão" : "Pagar usando dois cartões"}</button>
                         </div>
                       </div>
+                    ) : metodo === "PIX 4X SEM JUROS" ? (
+                      <div className="mt-6 border px-3 py-6 text-center">
+                        <p className="flex items-center justify-center gap-1 text-2xl font-medium text-foreground"><span className="text-primary">✿</span> pagaleve</p>
+                        <p className="mt-3 text-3xl font-bold tracking-tight text-foreground" style={{ fontFamily: "'Bebas Neue', 'Oswald', sans-serif" }}>Compre em 4 parcelas</p>
+                        <p className="text-3xl font-bold text-primary" style={{ fontFamily: "'Bebas Neue', 'Oswald', sans-serif" }}>sem juros</p>
+                        <div className="mt-5 flex items-center justify-between px-1">
+                          {[["1", "HOJE", 25], ["2", "15 DIAS", 50], ["3", "30 DIAS", 75], ["4", "45 DIAS", 100]].map(([n, t, pct]) => (
+                            <div key={n as string} className="relative grid h-16 w-16 place-items-center rounded-full" style={{ background: `conic-gradient(var(--primary) ${pct}%, var(--muted) 0)` }}>
+                              <div className="grid h-[54px] w-[54px] place-items-center rounded-full bg-background leading-none">
+                                <span className="text-xl text-foreground">{n}<sup className="text-[10px]">a</sup></span>
+                                <span className="-mt-3 text-[8px] text-muted-foreground">{t}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <p className="mt-4 text-sm text-foreground">Sem cartão, só WhatsApp e <b>em segundos</b></p>
+                        <span className="mt-2 inline-flex items-center gap-1 rounded-full border border-foreground/50 px-3 py-0.5 text-[10px] text-foreground"><span className="text-primary">✓</span> Compra segura</span>
+                        <p className="mt-5 rounded bg-foreground py-2.5 text-[10px] text-background">Clique em <b>finalizar compra</b> para continuar.</p>
+                      </div>
                     ) : metodo === "PICPAY" ? (
                       <div className="mt-6 border p-5 text-foreground">
                         <p className="text-4xl font-extrabold tracking-tight text-[hsl(140_65%_45%)]">PicPay</p>
