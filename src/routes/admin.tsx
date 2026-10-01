@@ -153,6 +153,7 @@ function Produtos() {
   const [oldPrice, setOldPrice] = useState("");
   const [fotos, setFotos] = useState<(string | null)[]>([null, null, null, null]);
   const [desc, setDesc] = useState("");
+  const [temTamanhos, setTemTamanhos] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const { data: produtos = [] } = useQuery({
