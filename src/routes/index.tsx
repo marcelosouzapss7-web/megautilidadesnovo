@@ -1,12 +1,27 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { StoreHeader } from "@/components/StoreHeader";
 import { StoreFooter } from "@/components/StoreFooter";
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ShoppingCart, Plus, Minus } from "lucide-react";
 import { cart, useCart } from "@/lib/cart";
 
+const produtosQuery = queryOptions({
+  queryKey: ["products"],
+  queryFn: async () => (await supabase.from("products").select("*").order("position", { ascending: true }).order("created_at", { ascending: false })).data ?? [],
+});
+
+const settingsQuery = queryOptions({
+  queryKey: ["site_settings"],
+  queryFn: async () => (await supabase.from("site_settings").select("*").eq("id", 1).maybeSingle()).data,
+});
+
 export const Route = createFileRoute("/")({
+  loader: ({ context }) =>
+    Promise.all([
+      context.queryClient.ensureQueryData(produtosQuery),
+      context.queryClient.ensureQueryData(settingsQuery),
+    ]),
   head: () => ({
     meta: [
       { title: "MEGA SHOPPING — Nossos Produtos" },
@@ -28,14 +43,8 @@ const brl = (v: number) => Number(v).toLocaleString("pt-BR", { style: "currency"
 
 function Index() {
   const itens = useCart().items;
-  const { data: produtos = [] } = useQuery({
-    queryKey: ["products"],
-    queryFn: async () => (await supabase.from("products").select("*").order("position", { ascending: true }).order("created_at", { ascending: false })).data ?? [],
-  });
-  const { data: settings } = useQuery({
-    queryKey: ["site_settings"],
-    queryFn: async () => (await supabase.from("site_settings").select("*").eq("id", 1).maybeSingle()).data,
-  });
+  const { data: produtos } = useSuspenseQuery(produtosQuery);
+  const { data: settings } = useSuspenseQuery(settingsQuery);
   const hero = (settings as any)?.hero_image_url as string | undefined;
 
   function irParaProdutos() {
@@ -69,14 +78,14 @@ function Index() {
             NOSSOS PRODUTOS
           </h1>
           <div className="grid grid-cols-2 gap-3">
-            {produtos.map((p) => {
+            {produtos.map((p, idx) => {
               const k = itens.findIndex((i) => i.id === p.id && i.size === null && i.image === (p.image_url ?? null));
               const q = itens[k]?.qty ?? 0;
               return (
               <div key={p.id}>
               <Link to="/produto/$id" params={{ id: p.id }} className="block">
                 {p.image_url ? (
-                  <img src={p.image_url} alt={p.name} className="aspect-[3/4] w-full object-cover" />
+                  <img src={p.image_url} alt={p.name} loading={idx < 4 ? "eager" : "lazy"} fetchPriority={idx < 2 ? "high" : "auto"} className="aspect-[3/4] w-full object-cover" />
                 ) : (
                   <div className="aspect-[3/4] w-full bg-muted" />
                 )}
