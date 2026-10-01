@@ -495,3 +495,35 @@ function CardBrandPicker({ name = "bandeira" }: { name?: string }) {
     </>
   );
 }
+
+function PixTela({ pix, copiado, onCopy, onClose }: { pix: { pixCode: string; qrCode: string | null; amount: number }; copiado: boolean; onCopy: () => void; onClose: () => void }) {
+  const [seg, setSeg] = useState(600);
+  useEffect(() => { const t = setInterval(() => setSeg((s) => Math.max(0, s - 1)), 1000); return () => clearInterval(t); }, []);
+  const qr = pix.qrCode
+    ? (pix.qrCode.startsWith("data:") || pix.qrCode.startsWith("http") ? pix.qrCode : `data:image/png;base64,${pix.qrCode}`)
+    : `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(pix.pixCode)}`;
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-background">
+      <div className="sticky top-0 border-b bg-background py-4 text-center">
+        <p className="text-5xl font-light tracking-wide" style={{ color: "#32BCAD" }}>◆ pix</p>
+        <p className="mt-1 text-sm text-muted-foreground">Tempo restante {Math.floor(seg / 60)}:{String(seg % 60).padStart(2, "0")}</p>
+      </div>
+      <div className="mx-auto max-w-xs space-y-6 px-4 py-6">
+        <div className="rounded bg-muted p-4 text-center">
+          <p className="text-left font-bold text-foreground">Escaneie o QR Code</p>
+          <img src={qr} alt="QR Code Pix" className="mx-auto mt-3 h-52 w-52 bg-background p-2" />
+          <p className="mt-4 text-left font-bold text-foreground">Copie o código de pagamento</p>
+          <input readOnly value={pix.pixCode} className="mt-3 w-full truncate bg-background px-3 py-2 text-sm" />
+          <button onClick={onCopy} className="mt-2 w-full rounded bg-blue-700 py-3 font-bold text-background">{copiado ? "CÓDIGO COPIADO!" : "COPIAR CÓDIGO ⧉"}</button>
+          <p className="mt-3 text-sm text-foreground">Valor: <b>{brl(pix.amount / 100)}</b></p>
+        </div>
+        <div className="rounded bg-muted p-4">
+          <p className="font-bold text-foreground">Cole no app do seu banco</p>
+          <p className="text-sm text-foreground">Abra o app do seu banco na opção Pix, cole o código, confira os dados e pague.</p>
+          <p className="mt-4 flex items-center gap-2 rounded bg-green-50 p-3 text-sm text-foreground"><span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-green-500 border-t-transparent" />Aguardando pagamento</p>
+        </div>
+        <button onClick={onClose} className="w-full text-sm text-muted-foreground underline">Fechar</button>
+      </div>
+    </div>
+  );
+}
