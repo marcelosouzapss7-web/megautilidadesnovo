@@ -167,13 +167,14 @@ function Produtos() {
     setPrice(String(p.price).replace(".", ","));
     setOldPrice(p.old_price != null ? String(p.old_price).replace(".", ",") : "");
     setDesc(p.description ?? "");
+    setTemTamanhos((p as any).has_sizes !== false);
     const imgs = p.images?.length ? p.images : p.image_url ? [p.image_url] : [];
     setFotos([0, 1, 2, 3].map((i) => imgs[i] ?? null));
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function cancelEdit(form?: HTMLFormElement | null) {
-    setEditId(null); setName(""); setPrice(""); setOldPrice(""); setFotos([null, null, null, null]); setDesc("");
+    setEditId(null); setName(""); setPrice(""); setOldPrice(""); setFotos([null, null, null, null]); setDesc(""); setTemTamanhos(true);
     form?.reset();
   }
 
@@ -184,7 +185,7 @@ function Produtos() {
     const antigo = oldPrice.trim() ? Number(oldPrice.replace(",", ".")) : null;
     if (antigo !== null && isNaN(antigo)) return void toast.error("Valor 'De' inválido");
     setSaving(true);
-    const base = { name: name.trim().slice(0, 200), price: valor, old_price: antigo, description: desc.trim() || null };
+    const base = { name: name.trim().slice(0, 200), price: valor, old_price: antigo, description: desc.trim() || null, has_sizes: temTamanhos } as any;
     const images = fotos.filter((f): f is string => !!f);
     const dados = { ...base, images, image_url: images[0] ?? null };
     const { error } = editId
@@ -246,6 +247,11 @@ function Produtos() {
           <textarea value={desc} onChange={(e) => setDesc(e.target.value)} maxLength={5000} rows={5}
             className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
         </div>
+        <label className="flex items-center gap-2 text-sm sm:col-span-2">
+          <input type="checkbox" checked={temTamanhos} onChange={(e) => setTemTamanhos(e.target.checked)}
+            className="h-4 w-4 accent-primary" />
+          Mostrar botões de tamanho (P/M/G/GG) neste produto
+        </label>
         <Button type="submit" disabled={saving} className={editId ? "" : "sm:col-span-2"}>
           {saving ? "Salvando…" : editId ? "Salvar alterações" : "Adicionar produto"}
         </Button>
