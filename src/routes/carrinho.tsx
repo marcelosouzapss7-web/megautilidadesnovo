@@ -20,13 +20,13 @@ export const Route = createFileRoute("/carrinho")({
 
 const brl = (v: number) => Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-function Etapas() {
+export function Etapas({ etapa = 2 }: { etapa?: number }) {
   const nomes = ["1.Carrinho", "2.Pagamento", "3.Confirmação"];
   return (
     <div className="px-5 pb-5 pt-4">
       <div className="relative mx-3 h-2">
         <div className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded bg-muted" />
-        <div className="absolute left-0 top-1/2 h-1 w-1/2 -translate-y-1/2 rounded bg-primary/50" />
+        <div className="absolute left-0 top-1/2 h-1 -translate-y-1/2 rounded bg-primary/50" style={{ width: etapa >= 3 ? "100%" : "50%" }} />
         {[0, 50, 100].map((l) => (
           <span key={l} className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/60" style={{ left: `${l}%` }} />
         ))}
@@ -97,7 +97,11 @@ function Carrinho() {
 
           <Link to="/" className="mt-4 inline-block bg-primary px-6 py-3 text-sm font-bold text-primary-foreground">Escolher mais produtos</Link>
           <div className="mt-4 flex justify-end">
-            <button disabled={items.length === 0} className="bg-[hsl(130_50%_42%)] px-8 py-3 text-primary-foreground disabled:opacity-50">FECHAR PEDIDO</button>
+            {items.length === 0 ? (
+              <button disabled className="bg-[hsl(130_50%_42%)] px-8 py-3 text-primary-foreground opacity-50">FECHAR PEDIDO</button>
+            ) : (
+              <Link to="/checkout" className="bg-[hsl(130_50%_42%)] px-8 py-3 text-primary-foreground">FECHAR PEDIDO</Link>
+            )}
           </div>
         </div>
         <div className="mt-6"><StoreFooter /></div>
