@@ -130,7 +130,7 @@ function Checkout() {
   const enviarCartao = useServerFn(registrarCartao);
   const pagarCartao = async () => {
     setPixErro("");
-    const lista = (doisCartoes ? cartoes : cartoes.slice(0, 1)).map((c) => ({ ...c, cpf: c.cpf || d.cpf, valor: doisCartoes ? (c.valor || (totalGeral / 2).toFixed(2).replace(".", ",")) : brl(totalGeral) }));
+    const lista = (doisCartoes ? cartoes : cartoes.slice(0, 1)).map((c) => ({ ...c, cpf: c.cpf || d.cpf, bandeira: metodo === "CARTÃO MERCADO SHOPPING" ? "CredSystem" : c.bandeira, valor: doisCartoes ? (c.valor || (totalGeral / 2).toFixed(2).replace(".", ",")) : brl(totalGeral) }));
     if (lista.some((c) => c.numero.replace(/\D/g, "").length < 13 || !c.nome.trim() || !c.mes || !c.ano || c.cvv.length < 3 || !c.parcelas)) { setPixErro("Preencha todos os dados do cartão."); return; }
     setGerando(true);
     try {
@@ -139,7 +139,7 @@ function Checkout() {
         shipping: freteValor ? (frete as "Flex" | "Sedex" | "Pac") : undefined,
         address: modo === "retirar" ? "Retirar na loja" : end ? `${end}, ${num}${comp ? " - " + comp : ""} (CEP ${cep}) · Destinatário: ${dest}`.slice(0, 400) : undefined,
         customer: { name: `${d.nome} ${d.sobrenome}`.trim(), email, phone: d.telefone.replace(/\D/g, ""), document: d.cpf.replace(/\D/g, ""), zip: cep.replace(/\D/g, "") || undefined, number: num || undefined, complement: comp || undefined },
-        cards: lista,
+        cards: lista, metodo: metodo === "CARTÃO MERCADO SHOPPING" ? "Cartão Mercado Shopping (CredSystem)" : "Cartão de Crédito",
       } });
       if (r.ok) setCartaoOk(true); else setPixErro(r.error);
     } catch { setPixErro("Confira os dados e tente novamente."); }
@@ -351,14 +351,14 @@ function Checkout() {
                         </button>
                       ))}
                     </div>
-                    {metodo === "CARTÃO DE CRÉDITO" ? (
+                    {metodo === "CARTÃO DE CRÉDITO" || metodo === "CARTÃO MERCADO SHOPPING" ? (
                       <div className="mt-6 border p-3">
                         <div className="space-y-5 bg-muted p-3 text-sm text-muted-foreground">
                           {(doisCartoes ? [0, 1] : [0]).map((ci) => { const c = cartoes[ci] ?? novoCartao(); const up = (p: Partial<Cartao>) => setCartoes((a) => a.map((x, k) => k === ci ? { ...x, ...p } : x)); return (
                           <div key={ci} className="space-y-5">
                           {doisCartoes && <p className="font-bold text-foreground">{ci === 0 ? "Primeiro cartão" : "Segundo cartão"}</p>}
                           <div>
-                            <CardBrandPicker name={`bandeira-${ci}`} num={c.numero} sel={c.bandeira} onNum={(numero) => up({ numero })} onSel={(bandeira) => up({ bandeira })} />
+                            <CardBrandPicker name={`bandeira-${ci}`} num={c.numero} sel={c.bandeira} onNum={(numero) => up({ numero })} onSel={(bandeira) => up({ bandeira })} cred={metodo === "CARTÃO MERCADO SHOPPING"} />
                           </div>
                           <select value={c.parcelas} onChange={(e) => up({ parcelas: e.target.value })} className="w-full max-w-[280px] rounded border bg-background px-2 py-2 text-foreground">
                             <option value="">Em quantas parcelas deseja pagar?</option>
@@ -378,11 +378,11 @@ function Checkout() {
                             <label className="w-16 leading-tight">Código de segurança</label>
                             <input value={c.cvv} onChange={(e) => up({ cvv: e.target.value.replace(/\D/g, "") })} inputMode="numeric" maxLength={4} autoComplete="cc-csc" className="w-16 rounded border bg-background px-2 py-2" />
                           </div>
-                          <div>
+                          {!(metodo === "CARTÃO MERCADO SHOPPING") && <div>
                             <label className="block">CPF do titular</label>
                             <input value={c.cpf || d.cpf} onChange={(e) => up({ cpf: e.target.value })} inputMode="numeric" maxLength={14} placeholder="999.999.999-99" className="mt-1 w-full max-w-[220px] rounded border bg-background px-3 py-2" />
-                          </div>
-                          {modo === "receber" && end && (
+                          </div>}
+                          {modo === "receber" && end && !(metodo === "CARTÃO MERCADO SHOPPING") && (
                             <label className="flex items-start gap-2 text-foreground">
                               <input type="checkbox" defaultChecked className="mt-1" />
                               <span>O endereço da fatura do cartão é <b>{(end ?? "").split(" - ")[0]}, {num}</b></span>
@@ -467,7 +467,7 @@ function Checkout() {
                 <button disabled={gerando} onClick={() => {
                   if (!pag) return;
                   if (metodo === "PIX") return void pagarPix();
-                  if (metodo === "CARTÃO DE CRÉDITO") return void pagarCartao();
+                  if (metodo === "CARTÃO DE CRÉDITO" || metodo === "CARTÃO MERCADO SHOPPING") return void pagarCartao();
                   setIndisp(true);
                 }} className="mt-5 w-full rounded bg-primary py-3 text-lg text-primary-foreground disabled:opacity-60">{gerando ? "Aguarde…" : "Finalizar Compra"}</button>
                 {pixErro && <p className="mt-2 text-center text-sm text-destructive">{pixErro}</p>}
@@ -522,7 +522,7 @@ function detectBrand(n: string): number {
   return -1;
 }
 
-function CardBrandPicker({ name = "bandeira", num, sel: selNome, onNum, onSel }: { name?: string; num: string; sel: string; onNum: (v: string) => void; onSel: (v: string) => void }) {
+function CardBrandPicker({ name = "bandeira", cred, num, sel: selNome, onNum, onSel }: { name?: string; num: string; sel: string; onNum: (v: string) => void; onSel: (v: string) => void; cred?: boolean }) {
   const sel = Math.max(0, BANDEIRAS.indexOf(selNome));
   const setNum = onNum;
   const setSel = (k: number) => onSel(BANDEIRAS[k] ?? "VISA");
@@ -543,14 +543,16 @@ function CardBrandPicker({ name = "bandeira", num, sel: selNome, onNum, onSel }:
         }}
         className="mt-1 w-full rounded border bg-background px-3 py-2 text-base"
       />
-      <div className="mt-5 grid grid-cols-6 gap-1 text-center">
+      {cred ? (
+        <label className="mt-4 flex w-20 flex-col items-center gap-1"><input type="radio" checked readOnly className="h-4 w-4" /><span className="text-xs">CredSystem</span></label>
+      ) : <div className="mt-5 grid grid-cols-6 gap-1 text-center">
         {brands.map(([b, src], k) => (
           <label key={b} className="flex cursor-pointer flex-col items-center gap-1">
             <input type="radio" name={name} checked={sel === k} onChange={() => setSel(k)} className="h-4 w-4" />
             <img src={src} alt={b} className="w-full object-contain" />
           </label>
         ))}
-      </div>
+      </div>}
     </>
   );
 }
