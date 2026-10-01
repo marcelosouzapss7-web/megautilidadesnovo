@@ -339,7 +339,7 @@ function Config() {
       {bloco("Logo do cabeçalho (substitui a estrela e o nome)", "logo_url", 600, "Remover logo")}
       {bloco("Imagem principal (aparece abaixo do cabeçalho)", "hero_image_url", 1600, "Remover imagem principal")}
       {bloco("Bandeira (formas de pagamento no rodapé)", "payment_logo_url", 900, "Remover bandeira")}
-      {bloco("Pix (imagem na forma de pagamento PIX)", "pix_logo_url", 600, "Remover imagem do Pix")}
+      {bloco("Pagamento Pix (imagem exibida ao cliente)", "pix_logo_url", 600, "Remover imagem do Pix")}
       <div className="space-y-4 rounded-xl bg-background p-4 shadow-sm">
         <Label>Descrição do rodapé (dados da empresa, uma linha por campo)</Label>
         <Textarea
