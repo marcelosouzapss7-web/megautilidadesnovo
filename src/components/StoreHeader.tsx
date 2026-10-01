@@ -2,12 +2,15 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Star, User, ShoppingBag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { cart, useCart } from "@/lib/cart";
+import { CartDrawer } from "@/components/CartDrawer";
 
 export function StoreHeader() {
   const { data: settings, isLoading } = useQuery({
     queryKey: ["site_settings"],
     queryFn: async () => (await supabase.from("site_settings").select("*").eq("id", 1).maybeSingle()).data,
   });
+  const qtd = useCart().items.reduce((s, i) => s + i.qty, 0);
   return (
     <header className="sticky top-0 z-10 flex items-center justify-between bg-background px-3 py-3 shadow-sm">
       <div className="flex items-center gap-3 text-primary">
@@ -33,10 +36,11 @@ export function StoreHeader() {
       </Link>
       <div className="flex items-center gap-3 text-primary">
         <User className="h-6 w-6" />
-        <div className="relative">
+        <button aria-label="Abrir sacola" onClick={cart.open} className="relative">
           <ShoppingBag className="h-6 w-6" />
-          <span className="absolute -bottom-1 -right-1 grid h-4 w-4 place-items-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">0</span>
-        </div>
+          <span className="absolute -bottom-1 -right-1 grid h-4 w-4 place-items-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">{qtd}</span>
+        </button>
+        <CartDrawer />
       </div>
     </header>
   );

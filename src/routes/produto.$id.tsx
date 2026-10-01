@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { StoreHeader } from "@/components/StoreHeader";
 import { StoreFooter } from "@/components/StoreFooter";
+import { cart } from "@/lib/cart";
 
 export const Route = createFileRoute("/produto/$id")({
   head: () => ({
@@ -25,6 +26,7 @@ const bebas = { fontFamily: "'Bebas Neue', sans-serif" };
 function Produto() {
   const { id } = Route.useParams();
   const [tam, setTam] = useState<string | null>(null);
+  const [aviso, setAviso] = useState(false);
   const [cep, setCep] = useState("");
   const { data: p, isLoading } = useQuery({
     queryKey: ["product", id],
@@ -56,7 +58,14 @@ function Produto() {
             <div className="mt-8 text-center">
               <p className="text-5xl text-primary" style={bebas}>{brl(p.price)}</p>
               <p className="text-lg text-foreground" style={bebas}>OU 3X DE {brl(p.price / 3)}</p>
-              <button className="mt-5 w-48 rounded-full bg-[hsl(85_75%_42%)] py-3 font-serif font-bold text-primary-foreground">COMPRAR</button>
+              <button
+                onClick={() => {
+                  if (!tam) { setAviso(true); return; }
+                  setAviso(false);
+                  cart.add({ id: p.id, name: p.name, price: Number(p.price), image: p.images?.[0] ?? p.image_url ?? null, size: tam });
+                }}
+                className="mt-5 w-48 rounded-full bg-[hsl(85_75%_42%)] py-3 font-serif font-bold text-primary-foreground">COMPRAR</button>
+              {aviso && <p className="mt-2 text-sm text-destructive">Escolha um tamanho antes de comprar.</p>}
               <p className="mt-6 text-sm text-foreground">Calcule o frete e prazo de entrega.</p>
               <div className="mt-3 flex items-center justify-center gap-2">
                 <div className="flex">
