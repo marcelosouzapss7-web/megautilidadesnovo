@@ -27,7 +27,7 @@ export function CartDrawer() {
               {it.image ? <img src={it.image} alt={it.name} className="h-24 w-[74px] rounded object-cover" /> : <div className="h-24 w-[74px] rounded bg-muted" />}
               <div className="flex-1">
                 <div className="flex items-start gap-2">
-                  <p className="flex-1 text-xs uppercase leading-5 text-foreground">{it.name}<br />{it.size}</p>
+                  <p className="flex-1 text-xs uppercase leading-5 text-foreground">{it.name}{it.size ? <><br />Tam. {it.size}</> : null}</p>
                   <button aria-label="Remover" onClick={() => cart.remove(k)} className="text-muted-foreground"><Trash2 className="h-4 w-4" /></button>
                 </div>
                 <div className="mt-2 flex items-center justify-between">
