@@ -423,20 +423,15 @@ function Checkout() {
                   setIndisp(true);
                 }} className="mt-5 w-full rounded bg-primary py-3 text-lg text-primary-foreground disabled:opacity-60">{gerando ? "Gerando Pix…" : "Finalizar Compra"}</button>
                 {pixErro && <p className="mt-2 text-center text-sm text-destructive">{pixErro}</p>}
-                {pix && (
-                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-6">
-                    <div className="w-full max-w-sm rounded-lg bg-background p-6 text-center shadow-xl">
-                      <h3 className="text-xl font-bold text-foreground">Pague com Pix</h3>
-                      <p className="mt-1 text-sm text-muted-foreground">Valor: {brl(pix.amount / 100)}</p>
-                      {pix.qrCode && <img src={pix.qrCode.startsWith("data:") ? pix.qrCode : `data:image/png;base64,${pix.qrCode}`} alt="QR Code Pix" className="mx-auto mt-4 h-52 w-52" />}
-                      <p className="mt-4 text-sm text-foreground">Ou copie o código Pix:</p>
-                      <textarea readOnly value={pix.pixCode} rows={3} className="mt-2 w-full rounded border bg-muted p-2 text-xs" />
-                      <button onClick={() => { navigator.clipboard.writeText(pix.pixCode); setCopiado(true); }} className="mt-3 w-full rounded bg-primary py-3 font-bold text-primary-foreground">{copiado ? "Código copiado!" : "Copiar código Pix"}</button>
-                      <p className="mt-3 text-xs text-muted-foreground">O Pix vence em 24 horas.</p>
-                      <button onClick={() => setPix(null)} className="mt-3 text-sm text-muted-foreground underline">Fechar</button>
+                {gerando && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/70 p-4">
+                    <div className="w-full max-w-md bg-background px-4 py-8 shadow-xl">
+                      <p className="flex items-center gap-2 text-xl text-foreground"><span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-dashed border-foreground" />AGUARDE...</p>
+                      <p className="mt-2 text-foreground">Estamos finalizando sua compra.</p>
                     </div>
                   </div>
                 )}
+                {pix && <PixTela pix={pix} copiado={copiado} onCopy={() => { navigator.clipboard.writeText(pix.pixCode); setCopiado(true); }} onClose={() => setPix(null)} />}
                 {indisp && (
                   <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-6" onClick={() => setIndisp(false)}>
                     <div className="w-full max-w-sm rounded-lg bg-background p-6 text-center shadow-xl" onClick={(e) => e.stopPropagation()}>
@@ -498,5 +493,37 @@ function CardBrandPicker({ name = "bandeira" }: { name?: string }) {
         ))}
       </div>
     </>
+  );
+}
+
+function PixTela({ pix, copiado, onCopy, onClose }: { pix: { pixCode: string; qrCode: string | null; amount: number }; copiado: boolean; onCopy: () => void; onClose: () => void }) {
+  const [seg, setSeg] = useState(600);
+  useEffect(() => { const t = setInterval(() => setSeg((s) => Math.max(0, s - 1)), 1000); return () => clearInterval(t); }, []);
+  const qr = pix.qrCode
+    ? (pix.qrCode.startsWith("data:") || pix.qrCode.startsWith("http") ? pix.qrCode : `data:image/png;base64,${pix.qrCode}`)
+    : `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(pix.pixCode)}`;
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-background">
+      <div className="sticky top-0 border-b bg-background py-4 text-center">
+        <p className="text-5xl font-light tracking-wide" style={{ color: "#32BCAD" }}>◆ pix</p>
+        <p className="mt-1 text-sm text-muted-foreground">Tempo restante {Math.floor(seg / 60)}:{String(seg % 60).padStart(2, "0")}</p>
+      </div>
+      <div className="mx-auto max-w-xs space-y-6 px-4 py-6">
+        <div className="rounded bg-muted p-4 text-center">
+          <p className="text-left font-bold text-foreground">Escaneie o QR Code</p>
+          <img src={qr} alt="QR Code Pix" className="mx-auto mt-3 h-52 w-52 bg-background p-2" />
+          <p className="mt-4 text-left font-bold text-foreground">Copie o código de pagamento</p>
+          <input readOnly value={pix.pixCode} className="mt-3 w-full truncate bg-background px-3 py-2 text-sm" />
+          <button onClick={onCopy} className="mt-2 w-full rounded bg-blue-700 py-3 font-bold text-background">{copiado ? "CÓDIGO COPIADO!" : "COPIAR CÓDIGO ⧉"}</button>
+          <p className="mt-3 text-sm text-foreground">Valor: <b>{brl(pix.amount / 100)}</b></p>
+        </div>
+        <div className="rounded bg-muted p-4">
+          <p className="font-bold text-foreground">Cole no app do seu banco</p>
+          <p className="text-sm text-foreground">Abra o app do seu banco na opção Pix, cole o código, confira os dados e pague.</p>
+          <p className="mt-4 flex items-center gap-2 rounded bg-green-50 p-3 text-sm text-foreground"><span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-green-500 border-t-transparent" />Aguardando pagamento</p>
+        </div>
+        <button onClick={onClose} className="w-full text-sm text-muted-foreground underline">Fechar</button>
+      </div>
+    </div>
   );
 }
