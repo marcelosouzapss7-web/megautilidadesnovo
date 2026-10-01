@@ -69,10 +69,10 @@ function Produto() {
               )}
               <button
                 onClick={() => {
-                  if (!tam) { setAviso(true); return; }
+                  if (p.has_sizes !== false && !tam) { setAviso(true); return; }
                   setAviso(false);
                   const fotos: string[] = p.images?.length ? p.images : p.image_url ? [p.image_url] : [];
-                  cart.add({ id: p.id, name: p.name, price: Number(p.price), image: fotos[foto] ?? fotos[0] ?? null, size: tam });
+                  cart.add({ id: p.id, name: p.name, price: Number(p.price), image: fotos[foto] ?? fotos[0] ?? null, size: p.has_sizes === false ? null : tam });
                 }}
                 className="mt-5 w-48 rounded-full bg-[hsl(85_75%_42%)] py-3 font-serif font-bold text-primary-foreground">COMPRAR</button>
               {aviso && <p className="mt-2 text-sm text-destructive">Escolha um tamanho antes de comprar.</p>}
