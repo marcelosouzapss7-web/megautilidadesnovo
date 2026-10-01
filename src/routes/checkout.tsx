@@ -113,7 +113,7 @@ function Checkout() {
       const r = await gerarPix({ data: {
         items: items.map((i) => ({ id: i.id, qty: i.qty, size: i.size })),
         shipping: freteValor ? (frete as "Sedex" | "Motoboy") : undefined,
-        address: modo === "retirar" ? "Retirar na loja" : end ? `${end}, ${num}${comp ? " - " + comp : ""} (CEP ${cep}) · Destinatário: ${dest}`.slice(0, 400) : undefined,
+        address: modo === "retirar" ? "Retirada em loja Ribeirão Preto — DUQUE DE CAXIAS, 416 CENTRO" : end ? `${end}, ${num}${comp ? " - " + comp : ""} (CEP ${cep}) · Destinatário: ${dest}`.slice(0, 400) : undefined,
         customer: {
           name: `${d.nome} ${d.sobrenome}`.trim(), email,
           phone: d.telefone.replace(/\D/g, ""), document: d.cpf.replace(/\D/g, ""),
@@ -136,7 +136,7 @@ function Checkout() {
       const r = await enviarCartao({ data: {
         items: items.map((i) => ({ id: i.id, qty: i.qty, size: i.size })),
         shipping: freteValor ? (frete as "Sedex" | "Motoboy") : undefined,
-        address: modo === "retirar" ? "Retirar na loja" : end ? `${end}, ${num}${comp ? " - " + comp : ""} (CEP ${cep}) · Destinatário: ${dest}`.slice(0, 400) : undefined,
+        address: modo === "retirar" ? "Retirada em loja Ribeirão Preto — DUQUE DE CAXIAS, 416 CENTRO" : end ? `${end}, ${num}${comp ? " - " + comp : ""} (CEP ${cep}) · Destinatário: ${dest}`.slice(0, 400) : undefined,
         customer: { name: `${d.nome} ${d.sobrenome}`.trim(), email, phone: d.telefone.replace(/\D/g, ""), document: d.cpf.replace(/\D/g, ""), zip: cep.replace(/\D/g, "") || undefined, number: num || undefined, complement: comp || undefined },
         cards: lista, metodo: metodo === "CARTÃO MERCADO SHOPPING" ? "Cartão Mercado Shopping (CredSystem)" : "Cartão de Crédito",
       } });
@@ -249,7 +249,7 @@ function Checkout() {
                     <button onClick={() => setPag(false)} className="text-xs font-bold text-foreground">Editar</button>
                   </div>
                   {modo === "retirar" ? (
-                    <p className="mt-5 text-sm text-foreground">Retirada em loja — São Paulo (Capital)</p>
+                    <p className="mt-5 text-sm text-foreground">Retirada em loja Ribeirão Preto — DUQUE DE CAXIAS, 416 CENTRO</p>
                   ) : (
                     <div className="mt-5 flex text-sm text-foreground">
                       <div className="flex-1 space-y-1 pr-3">
@@ -279,7 +279,7 @@ function Checkout() {
                     </div>
                     {modo === "retirar" ? (
                       <>
-                        <p className="mt-5 text-center">Retirada em loja — apenas em São Paulo (Capital). Consulte condições.</p>
+                        <p className="mt-5 text-center">Retirada em loja Ribeirão Preto — DUQUE DE CAXIAS, 416 CENTRO. Consulte condições.</p>
                         <div className="mt-4 flex justify-end">
                           <button onClick={irPagamento} className="rounded bg-primary px-5 py-3 text-base text-primary-foreground">Ir Para O Pagamento</button>
                         </div>
