@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
-import { Package, Settings, LogOut, Trash2, Store, Pencil } from "lucide-react";
+import { Package, Settings, LogOut, Trash2, Store, Pencil, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { fileToDataUrl } from "@/lib/image";
@@ -110,7 +110,7 @@ function Login() {
 }
 
 function Dashboard({ email }: { email: string }) {
-  const [tab, setTab] = useState<"produtos" | "config">("produtos");
+  const [tab, setTab] = useState<"produtos" | "pedidos" | "config">("produtos");
   const qc = useQueryClient();
   async function logout() {
     qc.clear();
@@ -129,6 +129,7 @@ function Dashboard({ email }: { email: string }) {
       <aside className="flex w-16 shrink-0 flex-col gap-2 border-r bg-sidebar p-2 sm:w-56 sm:p-4">
         <p className="mb-4 hidden text-lg font-extrabold text-primary sm:block">Admin</p>
         {item("produtos", "Produtos", Package)}
+        {item("pedidos", "Pedidos", ShoppingBag)}
         {item("config", "Configuração", Settings)}
         <div className="mt-auto space-y-2">
           <Link to="/" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent">
@@ -140,7 +141,7 @@ function Dashboard({ email }: { email: string }) {
           <p className="hidden truncate text-xs text-muted-foreground sm:block">{email}</p>
         </div>
       </aside>
-      <main className="min-w-0 flex-1 p-4 sm:p-8">{tab === "produtos" ? <Produtos /> : <Config />}</main>
+      <main className="min-w-0 flex-1 p-4 sm:p-8">{tab === "produtos" ? <Produtos /> : tab === "pedidos" ? <Pedidos /> : <Config />}</main>
     </div>
   );
 }
@@ -322,4 +323,41 @@ function Config() {
 
 function formatBRL(v: number) {
   return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function Pedidos() {
+  const qc = useQueryClient();
+  const { data: pedidos = [], isLoading } = useQuery({
+    queryKey: ["admin_orders"],
+    queryFn: async () => (await supabase.from("orders").select("*").order("created_at", { ascending: false })).data ?? [],
+  });
+  const brl = (v: number) => Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const mudar = async (id: string, status: string) => { await supabase.from("orders").update({ status }).eq("id", id); qc.invalidateQueries({ queryKey: ["admin_orders"] }); };
+  return (
+    <div>
+      <h1 className="text-2xl font-extrabold">Pedidos</h1>
+      {isLoading ? <p className="mt-4 text-muted-foreground">Carregando…</p> : pedidos.length === 0 ? <p className="mt-4 text-muted-foreground">Nenhum pedido ainda.</p> : (
+        <div className="mt-6 space-y-4">
+          {pedidos.map((o: any) => (
+            <div key={o.id} className="rounded-lg border bg-card p-4 text-sm">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="font-bold">{new Date(o.created_at).toLocaleString("pt-BR")}</p>
+                <select value={o.status} onChange={(e) => mudar(o.id, e.target.value)} className="rounded border bg-background px-2 py-1">
+                  {["aguardando pagamento", "pago", "enviado", "entregue", "cancelado"].map((s) => <option key={s}>{s}</option>)}
+                </select>
+              </div>
+              <p className="mt-2"><b>Pagamento:</b> {o.payment_method}{o.transaction_hash ? ` · ${o.transaction_hash}` : ""}</p>
+              <p><b>Cliente:</b> {o.customer?.name} · {o.customer?.email} · {o.customer?.phone} · CPF {o.customer?.document}</p>
+              {o.customer?.address && <p><b>Entrega:</b> {o.customer.address}</p>}
+              <ul className="mt-2 list-disc pl-5">
+                {(o.items ?? []).map((i: any, k: number) => <li key={k}>{i.qty}x {i.name} — Tam. {i.size} — {brl(i.price * i.qty)}</li>)}
+              </ul>
+              <p className="mt-2">Subtotal {brl(o.subtotal)} · Frete {o.shipping_method ? `${o.shipping_method} ${brl(o.shipping_value)}` : "—"}</p>
+              <p className="text-base font-bold">Total {brl(o.total)}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }

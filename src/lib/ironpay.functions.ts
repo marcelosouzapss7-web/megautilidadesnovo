@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 
 const schema = z.object({
   items: z.array(z.object({ id: z.string().uuid(), qty: z.number().int().min(1).max(99), size: z.string().max(10) })).min(1).max(50),
+  address: z.string().max(400).optional(),
   shipping: z.enum(["Flex", "Sedex", "Pac"]).optional(),
   customer: z.object({
     name: z.string().trim().min(2).max(150),
@@ -62,5 +63,17 @@ export const criarPix = createServerFn({ method: "POST" })
     const pixCode = t.pix_code ?? t.pix?.pix_qr_code ?? t.pix_qr_code ?? null;
     const qr = t.qr_code ?? t.pix?.qr_code_base64 ?? null;
     if (!pixCode) { console.error("IronPay sem código Pix:", text); return { ok: false as const, error: "Não foi possível gerar o Pix." }; }
-    return { ok: true as const, hash: String(t.hash ?? ""), pixCode: String(pixCode), qrCode: qr ? String(qr) : null, amount };
+    const hash = String(t.hash ?? "");
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const itens = data.items.map((i) => { const p = prods.find((x) => x.id === i.id)!; return { name: p.name, size: i.size, qty: i.qty, price: Number(p.price) }; });
+      const subtotal = itens.reduce((s, i) => s + i.price * i.qty, 0);
+      const { error: oe } = await supabaseAdmin.from("orders").insert({
+        payment_method: "Pix", transaction_hash: hash, customer: { ...data.customer, address: data.address ?? null },
+        items: itens, shipping_method: data.shipping ?? null, shipping_value: data.shipping ? FRETES[data.shipping] / 100 : 0,
+        subtotal, total: amount / 100,
+      });
+      if (oe) console.error("Erro ao salvar pedido:", oe.message);
+    } catch (e) { console.error("Erro ao salvar pedido:", e); }
+    return { ok: true as const, hash, pixCode: String(pixCode), qrCode: qr ? String(qr) : null, amount };
   });

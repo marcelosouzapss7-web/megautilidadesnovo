@@ -110,7 +110,8 @@ function Checkout() {
     try {
       const r = await gerarPix({ data: {
         items: items.map((i) => ({ id: i.id, qty: i.qty, size: i.size })),
-        shipping: freteValor ? frete : undefined,
+        shipping: freteValor ? (frete as "Flex" | "Sedex" | "Pac") : undefined,
+        address: modo === "retirar" ? "Retirar na loja" : end ? `${end}, ${num}${comp ? " - " + comp : ""} (CEP ${cep}) · Destinatário: ${dest}`.slice(0, 400) : undefined,
         customer: {
           name: `${d.nome} ${d.sobrenome}`.trim(), email,
           phone: d.telefone.replace(/\D/g, ""), document: d.cpf.replace(/\D/g, ""),
