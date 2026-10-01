@@ -597,7 +597,7 @@ function CardBrandPicker({ name = "bandeira", cred, num, sel: selNome, onNum, on
   );
 }
 
-function PixTela({ pix, logo, copiado, onCopy, onClose }: { pix: { hash?: string; pixCode: string; qrCode: string | null; amount: number }; logo?: string | null; copiado: boolean; onCopy: () => void; onClose: () => void }) {
+function PixTela({ pix, logo, copiado, onCopy, onClose }: { pix: { hash?: string; pixCode: string; qrCode: string | null; amount: number }; logo: string | null | undefined; copiado: boolean; onCopy: () => void; onClose: () => void }) {
   const [seg, setSeg] = useState(600);
   useEffect(() => { const t = setInterval(() => setSeg((s) => Math.max(0, s - 1)), 1000); return () => clearInterval(t); }, []);
   const checar = useServerFn(checarPix);
