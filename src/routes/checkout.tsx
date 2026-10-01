@@ -67,7 +67,7 @@ function Checkout() {
   const [cep, setCep] = useState("");
   const [cepErro, setCepErro] = useState("");
   const [end, setEnd] = useState<string | null>(null);
-  const [frete, setFrete] = useState("Flex");
+  const [frete, setFrete] = useState("Sedex");
   const [num, setNum] = useState("");
   const [comp, setComp] = useState("");
   const [dest, setDest] = useState("");
@@ -95,9 +95,8 @@ function Checkout() {
   };
 
   const fretes = [
-    { n: "Flex", p: "Em até 4 dias úteis", v: 12.21 },
-    { n: "Sedex", p: "Em até 2 dias úteis", v: 17.9 },
-    { n: "Pac", p: "Em até 5 dias úteis", v: 19.9 },
+    { n: "Sedex", p: "Em até 1 dia útil", v: 12 },
+    { n: "Motoboy", p: "Em até 5 dias úteis", v: 7 },
   ];
 
   const [pag, setPag] = useState(false);
