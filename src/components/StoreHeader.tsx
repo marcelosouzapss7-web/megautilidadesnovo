@@ -25,34 +25,34 @@ export function StoreHeader() {
   const achados = t ? produtos.filter((p) => norm(p.name).includes(t)) : [];
   const qtd = useCart().items.reduce((s, i) => s + i.qty, 0);
   return (
-    <header className="sticky top-0 z-10 flex items-center justify-between bg-header px-3 py-3 shadow-sm">
-      <div className="flex items-center gap-3 text-header-foreground">
-        <button aria-label="Abrir menu" onClick={() => setMenu(true)}>
-        <svg width="22" height="18" viewBox="0 0 22 18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-          <path d="M2 2h18M2 9h12M2 16h16" />
+    <header className="sticky top-0 z-10 flex h-[72px] items-center justify-between bg-header px-4 shadow-sm">
+      <div className="flex items-center gap-5 text-header-foreground">
+        <button aria-label="Abrir menu" onClick={() => setMenu(true)} className="grid size-7 place-items-center">
+        <svg width="26" height="22" viewBox="0 0 26 22" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+          <path d="M2 2h22M2 11h15M2 20h19" />
         </svg>
         </button>
-        <button aria-label="Pesquisar" onClick={() => { setBusca((b) => !b); setTermo(""); }}>
-          <Search className="h-6 w-6" />
+        <button aria-label="Pesquisar" onClick={() => { setBusca((b) => !b); setTermo(""); }} className="grid size-8 place-items-center">
+          <Search className="size-7" strokeWidth={2.4} />
         </button>
       </div>
       <Link to="/">
         {isLoading ? (
           <div className="h-9 w-40" />
         ) : settings?.logo_url ? (
-          <img src={settings.logo_url} alt="Logo da loja" className="h-10 max-w-[180px] object-contain" />
-        ) : <img src={logoMegaShopping.url} alt="MEGA SHOPPING" className="h-12 w-auto object-contain" />}
+          <img src={settings.logo_url} alt="Logo da loja" className="h-[60px] max-w-[150px] object-contain" />
+        ) : <img src={logoMegaShopping.url} alt="MEGA SHOPPING" className="h-[60px] w-auto object-contain" />}
       </Link>
-      <div className="flex items-center gap-3 text-header-foreground">
-        <User className="h-6 w-6" />
-        <button aria-label="Abrir sacola" onClick={cart.open} className="relative">
-          <ShoppingBag className="h-6 w-6" />
+      <div className="flex items-center gap-5 text-header-foreground">
+        <User className="size-7" strokeWidth={2.4} />
+        <button aria-label="Abrir sacola" onClick={cart.open} className="relative grid size-8 place-items-center">
+          <ShoppingBag className="size-7" strokeWidth={2.4} />
           <span className="absolute -bottom-1 -right-1 grid h-4 w-4 place-items-center rounded-full bg-header-foreground text-[9px] font-bold text-background">{qtd}</span>
         </button>
         <CartDrawer />
       </div>
       {busca && (
-        <div className="fixed inset-x-0 bottom-0 top-[60px] z-40 bg-foreground/60" onClick={() => { setBusca(false); setTermo(""); }}>
+        <div className="fixed inset-x-0 bottom-0 top-[72px] z-40 bg-foreground/60" onClick={() => { setBusca(false); setTermo(""); }}>
           <div className="border-b bg-background px-3 py-3" onClick={(e) => e.stopPropagation()}>
             <input autoFocus value={termo} onChange={(e) => setTermo(e.target.value)} placeholder="O QUE VOCÊ ESTÁ PROCURANDO?" className="w-full bg-transparent text-sm outline-none placeholder:text-foreground" />
           </div>
