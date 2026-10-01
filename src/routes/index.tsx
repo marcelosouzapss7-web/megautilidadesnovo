@@ -23,7 +23,19 @@ export const Route = createFileRoute("/")({
       context.queryClient.ensureQueryData(settingsQuery),
     ]),
   head: () => ({
-...
+    meta: [
+      { title: "MEGA SHOPPING — Nossos Produtos" },
+      { name: "description", content: "Confira os produtos do MEGA SHOPPING com os melhores preços." },
+      { property: "og:title", content: "MEGA SHOPPING — Nossos Produtos" },
+      { property: "og:description", content: "Confira os produtos do MEGA SHOPPING com os melhores preços." },
+      { property: "og:type", content: "website" },
+      { property: "og:image", content: "https://megashoppingribeirao.shop/__l5e/assets-v1/facd7641-e4ec-4823-a137-10a0de2f40e6/og-compartilhar.png" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: "https://megashoppingribeirao.shop/__l5e/assets-v1/facd7641-e4ec-4823-a137-10a0de2f40e6/og-compartilhar.png" },
+    ],
+  }),
   component: Index,
 });
 
