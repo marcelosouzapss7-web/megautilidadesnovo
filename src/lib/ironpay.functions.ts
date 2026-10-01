@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 
 const schema = z.object({
   items: z.array(z.object({ id: z.string().uuid(), qty: z.number().int().min(1).max(99), size: z.string().max(10) })).min(1).max(50),
+  shipping: z.enum(["Flex", "Sedex", "Pac"]).optional(),
   customer: z.object({
     name: z.string().trim().min(2).max(150),
     email: z.string().trim().email().max(255),
@@ -38,6 +39,8 @@ export const criarPix = createServerFn({ method: "POST" })
       if (!p) throw new Error("Produto não encontrado");
       return { product_hash: productHash, title: `${p.name} ${i.size}`.slice(0, 200), cover: null, price: Math.round(Number(p.price) * 100), quantity: i.qty, operation_type: 1, tangible: true };
     });
+    const FRETES = { Flex: 1221, Sedex: 1790, Pac: 1990 } as const;
+    if (data.shipping) cart.push({ product_hash: productHash, title: `Frete ${data.shipping}`, cover: null, price: FRETES[data.shipping], quantity: 1, operation_type: 1, tangible: false });
     const amount = cart.reduce((s, c) => s + c.price * c.quantity, 0);
 
     const res = await fetch(`https://api.ironpayapp.com.br/api/public/v1/transactions?api_token=${encodeURIComponent(token)}`, {

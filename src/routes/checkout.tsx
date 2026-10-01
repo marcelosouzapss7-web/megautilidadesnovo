@@ -110,6 +110,7 @@ function Checkout() {
     try {
       const r = await gerarPix({ data: {
         items: items.map((i) => ({ id: i.id, qty: i.qty, size: i.size })),
+        shipping: freteValor ? frete : undefined,
         customer: {
           name: `${d.nome} ${d.sobrenome}`.trim(), email,
           phone: d.telefone.replace(/\D/g, ""), document: d.cpf.replace(/\D/g, ""),
@@ -135,6 +136,8 @@ function Checkout() {
   };
   const metodos = ["PIX", "PICPAY", "CARTÃO DE CRÉDITO", "PIX 4X SEM JUROS", "CARTÃO MERCADO SHOPPING", "GOOGLE PAY"];
   const freteSel = fretes.find((f) => f.n === frete);
+  const freteValor = modo === "receber" && end && freteSel ? freteSel.v : 0;
+  const totalGeral = total + freteValor;
 
   const itens = ["Identificar seu perfil", "Notificar sobre o andamento do seu pedido", "Gerenciar seu histórico de compras", "Acelerar o preenchimento de suas informações"];
   const card = "mt-4 bg-background p-5 shadow-sm";
@@ -335,7 +338,7 @@ function Checkout() {
                           </div>
                           <select className="w-full max-w-[280px] rounded border bg-background px-2 py-2 text-foreground">
                             <option>Em quantas parcelas deseja pagar?</option>
-                            {[1, 2, 3, 4, 5, 6].map((n) => <option key={n}>{n}x de {brl(total / n)} sem juros</option>)}
+                            {[1, 2, 3, 4, 5, 6].map((n) => <option key={n}>{n}x de {brl(totalGeral / n)} sem juros</option>)}
                           </select>
                           <div>
                             <label className="block">Nome impresso no cartão</label>
@@ -364,7 +367,7 @@ function Checkout() {
                           {doisCartoes && (
                             <div className="flex items-center gap-2">
                               <span>Valor *</span>
-                              <span className="flex items-center rounded border bg-background text-foreground"><span className="border-r bg-muted px-2">R$</span><input inputMode="decimal" defaultValue={(total / 2).toFixed(2).replace(".", ",")} className="w-24 px-2 py-0.5 text-right" /></span>
+                              <span className="flex items-center rounded border bg-background text-foreground"><span className="border-r bg-muted px-2">R$</span><input inputMode="decimal" defaultValue={(totalGeral / 2).toFixed(2).replace(".", ",")} className="w-24 px-2 py-0.5 text-right" /></span>
                             </div>
                           )}
                           </div>
@@ -415,7 +418,8 @@ function Checkout() {
                 </div>
                 <div className="mt-5 space-y-1 px-6 text-sm">
                   <div className="flex justify-between"><span>SUBTOTAL</span><span className="font-bold">{brl(total)}</span></div>
-                  <div className="flex justify-between text-base"><span className="font-bold">TOTAL</span><span>{brl(total)}</span></div>
+                  <div className="flex justify-between"><span>FRETE</span><span className="font-bold">{freteValor ? brl(freteValor) : "—"}</span></div>
+                  <div className="flex justify-between text-base"><span className="font-bold">TOTAL</span><span>{brl(totalGeral)}</span></div>
                 </div>
                 <button disabled={gerando} onClick={() => {
                   if (!pag) return;
