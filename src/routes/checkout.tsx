@@ -86,11 +86,18 @@ function Checkout() {
     { n: "Pac", p: "Em até 5 dias úteis", v: 19.9 },
   ];
 
+  const [pag, setPag] = useState(false);
+  const [metodo, setMetodo] = useState("PIX");
   const irPagamento = () => {
-    if (!end) { setCepErro("Campo obrigatório."); return; }
-    if (!num.trim() || !dest.trim()) { setErro("Preencha o número e o destinatário."); return; }
+    if (modo === "receber") {
+      if (!end) { setCepErro("Campo obrigatório."); return; }
+      if (!num.trim() || !dest.trim()) { setErro("Preencha o número e o destinatário."); return; }
+    }
     setErro("");
+    setPag(true);
   };
+  const metodos = ["PIX", "PICPAY", "CARTÃO DE CRÉDITO", "PIX 4X SEM JUROS", "CARTÃO MERCADO SHOPPING", "GOOGLE PAY"];
+  const freteSel = fretes.find((f) => f.n === frete);
 
   const itens = ["Identificar seu perfil", "Notificar sobre o andamento do seu pedido", "Gerenciar seu histórico de compras", "Acelerar o preenchimento de suas informações"];
   const card = "mt-4 bg-background p-5 shadow-sm";
@@ -171,6 +178,28 @@ function Checkout() {
               </div>
               )}
 
+              {pag && fase === "entrega" ? (
+                <div className={card}>
+                  <div className="flex items-center justify-between border-b pb-3">
+                    <h2 className="text-xl text-foreground">Entrega</h2>
+                    <button onClick={() => setPag(false)} className="text-xs font-bold text-foreground">Editar</button>
+                  </div>
+                  {modo === "retirar" ? (
+                    <p className="mt-5 text-sm text-foreground">Retirada em loja — São Paulo (Capital)</p>
+                  ) : (
+                    <div className="mt-5 flex text-sm text-foreground">
+                      <div className="flex-1 space-y-1 pr-3">
+                        <p>{(end ?? "").split(" - ")[0]} {num}{comp ? `, ${comp}` : ""}</p>
+                        <p>{(end ?? "").split(" - ").slice(1).join(" - ")}</p>
+                        <p>{cep}</p>
+                        <p className="pt-2">{freteSel?.n} · {freteSel?.p}</p>
+                      </div>
+                      <div className="flex items-center border-l pl-3">{freteSel && brl(freteSel.v)}</div>
+                    </div>
+                  )}
+                  <button onClick={() => setPag(false)} className="mt-4 block w-full text-center text-sm text-[hsl(215_80%_55%)]">Alterar opções de entrega</button>
+                </div>
+              ) : (
               <div className={card}>
                 <h2 className={titulo}>Entrega</h2>
                 {fase !== "entrega" ? (
@@ -185,7 +214,12 @@ function Checkout() {
                       ))}
                     </div>
                     {modo === "retirar" ? (
-                      <p className="mt-5 text-center">Retirada em loja — apenas em São Paulo (Capital). Consulte condições.</p>
+                      <>
+                        <p className="mt-5 text-center">Retirada em loja — apenas em São Paulo (Capital). Consulte condições.</p>
+                        <div className="mt-4 flex justify-end">
+                          <button onClick={irPagamento} className="rounded bg-primary px-5 py-3 text-base text-primary-foreground">Ir Para O Pagamento</button>
+                        </div>
+                      </>
                     ) : (
                       <>
                         <div className="mt-5 flex items-start gap-3">
@@ -237,9 +271,29 @@ function Checkout() {
                   </div>
                 )}
               </div>
+              )}
               <div className={card}>
                 <h2 className={titulo}>Pagamento</h2>
-                <p className="mt-4 text-center text-sm text-foreground">Aguardando o preenchimento dos dados</p>
+                {!(pag && fase === "entrega") ? (
+                  <p className="mt-4 text-center text-sm text-foreground">Aguardando o preenchimento dos dados</p>
+                ) : (
+                  <div className="mt-6">
+                    <button className="rounded bg-muted px-2 py-1.5 text-sm text-foreground">Adicionar vale-presente</button>
+                    <div className="mt-8 grid grid-cols-3 gap-4">
+                      {metodos.map((m) => (
+                        <button key={m} onClick={() => setMetodo(m)} className={`relative flex h-11 items-center justify-center px-1 text-center text-[11px] font-bold leading-tight text-primary-foreground ${metodo === m ? "bg-primary" : "bg-primary/45"}`}>
+                          {m}
+                          {metodo === m && <span className="absolute -bottom-2 left-1/2 h-0 w-0 -translate-x-1/2 border-x-8 border-t-8 border-x-transparent border-t-primary" />}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="mt-6 border p-6 text-center">
+                      <p className="text-3xl text-muted-foreground"><span className="text-[hsl(170_50%_50%)]">◆</span> {metodo.toLowerCase()}</p>
+                      <p className="mt-4 text-sm text-foreground">Para pagar, finalize sua compra abaixo</p>
+                      <p className="mt-1 text-muted-foreground">↓</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className={card}>
