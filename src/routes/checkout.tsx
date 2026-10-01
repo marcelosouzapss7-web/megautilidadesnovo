@@ -48,10 +48,48 @@ function Checkout() {
     setOk(true);
   };
 
+  const [fase, setFase] = useState<"dados" | "entrega">("dados");
+  const [modo, setModo] = useState<"receber" | "retirar">("receber");
+  const [cep, setCep] = useState("");
+  const [cepErro, setCepErro] = useState("");
+  const [end, setEnd] = useState<string | null>(null);
+  const [frete, setFrete] = useState("Flex");
+  const [num, setNum] = useState("");
+  const [comp, setComp] = useState("");
+  const [dest, setDest] = useState("");
+
   const irEntrega = () => {
     if (!d.nome.trim() || !d.sobrenome.trim() || !d.cpf.trim() || !d.telefone.trim()) { setErro("Preencha todos os dados."); return; }
     setErro("");
     if (salvar) localStorage.setItem("checkout_dados", JSON.stringify(d)); else localStorage.removeItem("checkout_dados");
+    if (!dest) setDest(`${d.nome} ${d.sobrenome}`.trim());
+    setFase("entrega");
+  };
+
+  const mudaCep = async (v: string) => {
+    const dig = v.replace(/\D/g, "").slice(0, 8);
+    setCep(dig.length > 5 ? `${dig.slice(0, 5)}-${dig.slice(5)}` : dig);
+    setEnd(null);
+    if (dig.length < 8) { setCepErro(dig ? "" : "Campo obrigatório."); return; }
+    try {
+      const r = await fetch(`https://viacep.com.br/ws/${dig}/json/`);
+      const j = await r.json();
+      if (j.erro) { setCepErro("CEP não encontrado."); return; }
+      setCepErro("");
+      setEnd(`${j.logradouro || ""} - ${j.bairro || ""} - ${j.localidade}/${j.uf}`);
+    } catch { setCepErro("Não foi possível consultar o CEP."); }
+  };
+
+  const fretes = [
+    { n: "Flex", p: "Em até 4 dias úteis", v: 12.21 },
+    { n: "Sedex", p: "Em até 2 dias úteis", v: 17.9 },
+    { n: "Pac", p: "Em até 5 dias úteis", v: 19.9 },
+  ];
+
+  const irPagamento = () => {
+    if (!end) { setCepErro("Campo obrigatório."); return; }
+    if (!num.trim() || !dest.trim()) { setErro("Preencha o número e o destinatário."); return; }
+    setErro("");
   };
 
   const itens = ["Identificar seu perfil", "Notificar sobre o andamento do seu pedido", "Gerenciar seu histórico de compras", "Acelerar o preenchimento de suas informações"];
@@ -82,6 +120,19 @@ function Checkout() {
             </div>
           ) : (
             <>
+              {fase === "entrega" ? (
+                <div className={card}>
+                  <div className="flex items-center justify-between border-b pb-3">
+                    <h2 className="text-xl text-foreground">Dados pessoais</h2>
+                    <button onClick={() => setFase("dados")} className="text-xs font-bold text-foreground">Editar</button>
+                  </div>
+                  <div className="mt-5 text-sm text-foreground">
+                    <p className="font-bold break-all">{email}</p>
+                    <p>{d.nome} {d.sobrenome}</p>
+                    <p>{d.telefone}</p>
+                  </div>
+                </div>
+              ) : (
               <div className={card}>
                 <h2 className={titulo}>Dados pessoais</h2>
                 <div className="mt-5 space-y-4 text-sm text-foreground">
@@ -118,10 +169,73 @@ function Checkout() {
                   </div>
                 </div>
               </div>
+              )}
 
               <div className={card}>
                 <h2 className={titulo}>Entrega</h2>
-                <p className="mt-4 text-center text-sm text-foreground">Aguardando o preenchimento dos dados</p>
+                {fase !== "entrega" ? (
+                  <p className="mt-4 text-center text-sm text-foreground">Aguardando o preenchimento dos dados</p>
+                ) : (
+                  <div className="mt-4 text-sm text-foreground">
+                    <div className="flex rounded-full border">
+                      {(["receber", "retirar"] as const).map((m) => (
+                        <button key={m} onClick={() => setModo(m)} className={`flex-1 rounded-full py-2.5 text-base ${modo === m ? "bg-foreground text-background" : "text-muted-foreground"}`}>
+                          {m === "receber" ? "Receber" : "Retirar"}
+                        </button>
+                      ))}
+                    </div>
+                    {modo === "retirar" ? (
+                      <p className="mt-5 text-center">Retirada em loja — apenas em São Paulo (Capital). Consulte condições.</p>
+                    ) : (
+                      <>
+                        <div className="mt-5 flex items-start gap-3">
+                          <span className="mt-2.5">CEP</span>
+                          <div>
+                            <div className="relative">
+                              <input value={cep} inputMode="numeric" maxLength={9} onChange={(e) => mudaCep(e.target.value)} className={`w-28 rounded border px-2 py-2 text-base ${cepErro ? "border-destructive" : ""} ${end ? "bg-muted" : ""}`} />
+                              {end && <span className="absolute -right-3 -top-2 text-[hsl(130_50%_42%)]">✓</span>}
+                            </div>
+                            {cepErro && <p className="mt-1 text-xs text-destructive">{cepErro}</p>}
+                          </div>
+                          <a href="https://buscacepinter.correios.com.br/" target="_blank" rel="noreferrer" className="mt-2.5">Não sei meu CEP</a>
+                        </div>
+                        {end && (
+                          <>
+                            <p className="mt-5 text-muted-foreground">Forma de entrega</p>
+                            <div className="mt-2 rounded-lg border">
+                              {fretes.map((f) => (
+                                <label key={f.n} className={`flex cursor-pointer items-center gap-4 border-b p-4 last:border-b-0 ${frete === f.n ? "bg-muted" : ""}`}>
+                                  <input type="radio" checked={frete === f.n} onChange={() => setFrete(f.n)} className="h-5 w-5" />
+                                  <div className="flex-1">
+                                    <p className={`text-base ${frete === f.n ? "text-foreground" : "text-muted-foreground"}`}>{f.n}</p>
+                                    <p className="text-xs text-muted-foreground">{f.p}</p>
+                                  </div>
+                                  <span className="border-l pl-3 text-muted-foreground">{brl(f.v)}</span>
+                                </label>
+                              ))}
+                            </div>
+                            <p className="mt-5 text-muted-foreground">Endereço de entrega</p>
+                            <p className="mt-1">{end}</p>
+                            <div className="mt-4 flex items-center gap-3">
+                              <label>NÚMERO</label>
+                              <input value={num} maxLength={10} onChange={(e) => setNum(e.target.value)} className="w-16 rounded border px-2 py-2" />
+                            </div>
+                            <div className="mt-4 flex items-center gap-2">
+                              <label className="text-xs">COMPLEMENTO E REFERÊNCIA</label>
+                              <input value={comp} maxLength={100} onChange={(e) => setComp(e.target.value)} placeholder="Opcional" className="min-w-0 flex-1 rounded border px-2 py-2" />
+                            </div>
+                            <label className="mt-4 block">DESTINATÁRIO</label>
+                            <input value={dest} maxLength={100} onChange={(e) => setDest(e.target.value)} className="mt-2 w-full max-w-[250px] rounded border px-2 py-2.5" />
+                            {erro && <p className="mt-2 text-destructive">{erro}</p>}
+                            <div className="mt-4 flex justify-end">
+                              <button onClick={irPagamento} className="rounded bg-primary px-5 py-3 text-base text-primary-foreground">Ir Para O Pagamento</button>
+                            </div>
+                          </>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
               <div className={card}>
                 <h2 className={titulo}>Pagamento</h2>
