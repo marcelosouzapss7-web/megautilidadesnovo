@@ -1,26 +1,29 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { StoreHeader } from "@/components/StoreHeader";
 import { StoreFooter } from "@/components/StoreFooter";
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ShoppingCart, Plus, Minus } from "lucide-react";
 import { cart, useCart } from "@/lib/cart";
 
+const produtosQuery = queryOptions({
+  queryKey: ["products"],
+  queryFn: async () => (await supabase.from("products").select("*").order("position", { ascending: true }).order("created_at", { ascending: false })).data ?? [],
+});
+
+const settingsQuery = queryOptions({
+  queryKey: ["site_settings"],
+  queryFn: async () => (await supabase.from("site_settings").select("*").eq("id", 1).maybeSingle()).data,
+});
+
 export const Route = createFileRoute("/")({
+  loader: ({ context }) =>
+    Promise.all([
+      context.queryClient.ensureQueryData(produtosQuery),
+      context.queryClient.ensureQueryData(settingsQuery),
+    ]),
   head: () => ({
-    meta: [
-      { title: "MEGA SHOPPING — Nossos Produtos" },
-      { name: "description", content: "Confira os produtos do MEGA SHOPPING com os melhores preços." },
-      { property: "og:title", content: "MEGA SHOPPING — Nossos Produtos" },
-      { property: "og:description", content: "Confira os produtos do MEGA SHOPPING com os melhores preços." },
-      { property: "og:type", content: "website" },
-      { property: "og:image", content: "https://megashoppingribeirao.shop/__l5e/assets-v1/facd7641-e4ec-4823-a137-10a0de2f40e6/og-compartilhar.png" },
-      { property: "og:image:width", content: "1200" },
-      { property: "og:image:height", content: "630" },
-      { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:image", content: "https://megashoppingribeirao.shop/__l5e/assets-v1/facd7641-e4ec-4823-a137-10a0de2f40e6/og-compartilhar.png" },
-    ],
-  }),
+...
   component: Index,
 });
 
@@ -28,14 +31,8 @@ const brl = (v: number) => Number(v).toLocaleString("pt-BR", { style: "currency"
 
 function Index() {
   const itens = useCart().items;
-  const { data: produtos = [] } = useQuery({
-    queryKey: ["products"],
-    queryFn: async () => (await supabase.from("products").select("*").order("position", { ascending: true }).order("created_at", { ascending: false })).data ?? [],
-  });
-  const { data: settings } = useQuery({
-    queryKey: ["site_settings"],
-    queryFn: async () => (await supabase.from("site_settings").select("*").eq("id", 1).maybeSingle()).data,
-  });
+  const { data: produtos } = useSuspenseQuery(produtosQuery);
+  const { data: settings } = useSuspenseQuery(settingsQuery);
   const hero = (settings as any)?.hero_image_url as string | undefined;
 
   function irParaProdutos() {
