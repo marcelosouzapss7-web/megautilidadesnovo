@@ -152,29 +152,44 @@ function Produtos() {
   const [file, setFile] = useState<File | null>(null);
   const [desc, setDesc] = useState("");
   const [saving, setSaving] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
   const { data: produtos = [] } = useQuery({
     queryKey: ["products"],
     queryFn: async () => (await supabase.from("products").select("*").order("created_at", { ascending: false })).data ?? [],
   });
+
+  function startEdit(p: (typeof produtos)[number]) {
+    setEditId(p.id);
+    setName(p.name);
+    setPrice(String(p.price).replace(".", ","));
+    setDesc(p.description ?? "");
+    setFile(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function cancelEdit(form?: HTMLFormElement | null) {
+    setEditId(null); setName(""); setPrice(""); setFile(null); setDesc("");
+    form?.reset();
+  }
 
   async function add(e: FormEvent) {
     e.preventDefault();
     const valor = Number(price.replace(",", "."));
     if (!name.trim() || isNaN(valor)) return void toast.error("Preencha nome e preço corretamente");
     setSaving(true);
-    const image_url = file ? await fileToDataUrl(file) : null;
-    const { error } = await supabase.from("products").insert({ name: name.trim().slice(0, 200), price: valor, image_url, description: desc.trim() || null });
+    const base = { name: name.trim().slice(0, 200), price: valor, description: desc.trim() || null };
+    let error;
+    if (editId) {
+      const upd = file ? { ...base, image_url: await fileToDataUrl(file) } : base;
+      ({ error } = await supabase.from("products").update(upd).eq("id", editId));
+    } else {
+      const image_url = file ? await fileToDataUrl(file) : null;
+      ({ error } = await supabase.from("products").insert({ ...base, image_url }));
+    }
     setSaving(false);
     if (error) return void toast.error("Não foi possível salvar");
-    toast.success("Produto adicionado");
-    setName(""); setPrice(""); setFile(null); setDesc("");
-    (e.target as HTMLFormElement).reset();
-    qc.invalidateQueries({ queryKey: ["products"] });
-  }
-
-  async function remove(id: string) {
-    if (!confirm("Excluir este produto?")) return;
-    await supabase.from("products").delete().eq("id", id);
+    toast.success(editId ? "Produto atualizado" : "Produto adicionado");
+    cancelEdit(e.target as HTMLFormElement);
     qc.invalidateQueries({ queryKey: ["products"] });
   }
 
