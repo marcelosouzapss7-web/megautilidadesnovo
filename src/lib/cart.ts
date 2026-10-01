@@ -46,4 +46,5 @@ export const cart = {
   open() { set({ open: true }); },
   close() { set({ open: false, toast: false }); },
   hideToast() { set({ toast: false }); },
+  clear() { set({ items: [] }); },
 };

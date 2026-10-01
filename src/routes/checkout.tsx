@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 import { StoreHeader } from "@/components/StoreHeader";
 import { StoreFooter } from "@/components/StoreFooter";
-import { useCart } from "@/lib/cart";
+import { cart, useCart } from "@/lib/cart";
 import { Etapas } from "./carrinho";
 import b0 from "@/assets/bandeiras/b0.png";
 import b1 from "@/assets/bandeiras/b1.png";
@@ -579,7 +579,7 @@ function PixTela({ pix, copiado, onCopy, onClose }: { pix: { hash?: string; pixC
   const [pago, setPago] = useState(false);
   useEffect(() => {
     if (!pix.hash || pago) return;
-    const t = setInterval(async () => { try { const r = await checar({ data: { hash: pix.hash! } }); if (r.pago) { setPago(true); cart.clear?.(); } } catch { /* tenta de novo */ } }, 5000);
+    const t = setInterval(async () => { try { const r = await checar({ data: { hash: pix.hash! } }); if (r.pago) { setPago(true); cart.clear(); } } catch { /* tenta de novo */ } }, 5000);
     return () => clearInterval(t);
   }, [pix.hash, pago]);
   if (pago) return (
