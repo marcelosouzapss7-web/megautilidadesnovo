@@ -423,20 +423,15 @@ function Checkout() {
                   setIndisp(true);
                 }} className="mt-5 w-full rounded bg-primary py-3 text-lg text-primary-foreground disabled:opacity-60">{gerando ? "Gerando Pix…" : "Finalizar Compra"}</button>
                 {pixErro && <p className="mt-2 text-center text-sm text-destructive">{pixErro}</p>}
-                {pix && (
-                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-6">
-                    <div className="w-full max-w-sm rounded-lg bg-background p-6 text-center shadow-xl">
-                      <h3 className="text-xl font-bold text-foreground">Pague com Pix</h3>
-                      <p className="mt-1 text-sm text-muted-foreground">Valor: {brl(pix.amount / 100)}</p>
-                      {pix.qrCode && <img src={pix.qrCode.startsWith("data:") ? pix.qrCode : `data:image/png;base64,${pix.qrCode}`} alt="QR Code Pix" className="mx-auto mt-4 h-52 w-52" />}
-                      <p className="mt-4 text-sm text-foreground">Ou copie o código Pix:</p>
-                      <textarea readOnly value={pix.pixCode} rows={3} className="mt-2 w-full rounded border bg-muted p-2 text-xs" />
-                      <button onClick={() => { navigator.clipboard.writeText(pix.pixCode); setCopiado(true); }} className="mt-3 w-full rounded bg-primary py-3 font-bold text-primary-foreground">{copiado ? "Código copiado!" : "Copiar código Pix"}</button>
-                      <p className="mt-3 text-xs text-muted-foreground">O Pix vence em 24 horas.</p>
-                      <button onClick={() => setPix(null)} className="mt-3 text-sm text-muted-foreground underline">Fechar</button>
+                {gerando && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/70 p-4">
+                    <div className="w-full max-w-md bg-background px-4 py-8 shadow-xl">
+                      <p className="flex items-center gap-2 text-xl text-foreground"><span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-dashed border-foreground" />AGUARDE...</p>
+                      <p className="mt-2 text-foreground">Estamos finalizando sua compra.</p>
                     </div>
                   </div>
                 )}
+                {pix && <PixTela pix={pix} copiado={copiado} onCopy={() => { navigator.clipboard.writeText(pix.pixCode); setCopiado(true); }} onClose={() => setPix(null)} />}
                 {indisp && (
                   <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-6" onClick={() => setIndisp(false)}>
                     <div className="w-full max-w-sm rounded-lg bg-background p-6 text-center shadow-xl" onClick={(e) => e.stopPropagation()}>
