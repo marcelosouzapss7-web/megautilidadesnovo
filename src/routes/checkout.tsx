@@ -160,7 +160,8 @@ function Checkout() {
   };
   const metodos = ["PIX", "PICPAY", "CARTÃO DE CRÉDITO", "PIX 4X SEM JUROS", "CARTÃO MERCADO SHOPPING", "GOOGLE PAY"];
   const freteSel = fretes.find((f) => f.n === frete);
-  const freteValor = modo === "receber" && end && freteSel ? freteSel.v : 0;
+  const freteGratis = total > 150;
+  const freteValor = modo === "receber" && end && freteSel && !freteGratis ? freteSel.v : 0;
   const totalGeral = total + freteValor;
 
   const itens = ["Identificar seu perfil", "Notificar sobre o andamento do seu pedido", "Gerenciar seu histórico de compras", "Acelerar o preenchimento de suas informações"];
@@ -258,7 +259,7 @@ function Checkout() {
                         <p>{cep}</p>
                         <p className="pt-2">{freteSel?.n} · {freteSel?.p}</p>
                       </div>
-                      <div className="flex items-center border-l pl-3">{freteSel && brl(freteSel.v)}</div>
+                      <div className="flex items-center border-l pl-3">{freteSel && (freteGratis ? "GRÁTIS" : brl(freteSel.v))}</div>
                     </div>
                   )}
                   <button onClick={() => setPag(false)} className="mt-4 block w-full text-center text-sm text-[hsl(215_80%_55%)]">Alterar opções de entrega</button>
@@ -476,7 +477,7 @@ function Checkout() {
                 </div>
                 <div className="mt-5 space-y-1 px-6 text-sm">
                   <div className="flex justify-between"><span>SUBTOTAL</span><span className="font-bold">{brl(total)}</span></div>
-                  <div className="flex justify-between"><span>FRETE</span><span className="font-bold">{freteValor ? brl(freteValor) : "—"}</span></div>
+                  <div className="flex justify-between"><span>FRETE</span><span className="font-bold">{freteGratis && modo === "receber" && end ? "R$ 0,00 GRÁTIS" : freteValor ? brl(freteValor) : "—"}</span></div>
                   <div className="flex justify-between text-base"><span className="font-bold">TOTAL</span><span>{brl(totalGeral)}</span></div>
                 </div>
                 <button disabled={gerando} onClick={() => {
