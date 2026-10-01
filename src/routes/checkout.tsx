@@ -88,6 +88,7 @@ function Checkout() {
 
   const [pag, setPag] = useState(false);
   const [metodo, setMetodo] = useState("PIX");
+  const [indisp, setIndisp] = useState(false);
   const irPagamento = () => {
     if (modo === "receber") {
       if (!end) { setCepErro("Campo obrigatório."); return; }
@@ -288,7 +289,11 @@ function Checkout() {
                       ))}
                     </div>
                     <div className="mt-6 border p-6 text-center">
-                      <p className="text-3xl text-muted-foreground"><span className="text-[hsl(170_50%_50%)]">◆</span> {metodo.toLowerCase()}</p>
+                      {metodo === "PICPAY" ? (
+                        <p className="text-3xl font-bold text-[hsl(140_65%_45%)]">PicPay</p>
+                      ) : (
+                        <p className="text-3xl text-muted-foreground"><span className="text-[hsl(170_50%_50%)]">◆</span> {metodo.toLowerCase()}</p>
+                      )}
                       <p className="mt-4 text-sm text-foreground">Para pagar, finalize sua compra abaixo</p>
                       <p className="mt-1 text-muted-foreground">↓</p>
                     </div>
@@ -319,7 +324,17 @@ function Checkout() {
                   <div className="flex justify-between"><span>SUBTOTAL</span><span className="font-bold">{brl(total)}</span></div>
                   <div className="flex justify-between text-base"><span className="font-bold">TOTAL</span><span>{brl(total)}</span></div>
                 </div>
-                <button className="mt-5 w-full rounded bg-primary py-3 text-lg text-primary-foreground">Finalizar Compra</button>
+                <button onClick={() => { if (pag && metodo === "PICPAY") setIndisp(true); }} className="mt-5 w-full rounded bg-primary py-3 text-lg text-primary-foreground">Finalizar Compra</button>
+                {indisp && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-6" onClick={() => setIndisp(false)}>
+                    <div className="w-full max-w-sm rounded-lg bg-background p-6 text-center shadow-xl" onClick={(e) => e.stopPropagation()}>
+                      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 text-3xl font-bold text-primary">!</div>
+                      <h3 className="mt-4 text-xl font-bold text-foreground">Forma de pagamento indisponível</h3>
+                      <p className="mt-2 text-sm text-muted-foreground">No momento, o pagamento via PicPay está indisponível. Por favor, escolha outra forma de pagamento para finalizar sua compra.</p>
+                      <button onClick={() => setIndisp(false)} className="mt-6 w-full rounded bg-primary py-3 font-bold text-primary-foreground">Escolher outra forma</button>
+                    </div>
+                  </div>
+                )}
               </div>
             </>
           )}
