@@ -34,6 +34,7 @@ const inp = "w-full rounded border px-3 py-2.5 text-base";
 
 function Checkout() {
   const { items } = useCart();
+  const [doisCartoes, setDoisCartoes] = useState(false);
   const total = items.reduce((s, i) => s + i.price * i.qty, 0);
   const [email, setEmail] = useState("");
   const [erro, setErro] = useState("");
@@ -304,8 +305,11 @@ function Checkout() {
                     {metodo === "CARTÃO DE CRÉDITO" ? (
                       <div className="mt-6 border p-3">
                         <div className="space-y-5 bg-muted p-3 text-sm text-muted-foreground">
+                          {(doisCartoes ? [0, 1] : [0]).map((ci) => (
+                          <div key={ci} className="space-y-5">
+                          {doisCartoes && <p className="font-bold text-foreground">{ci === 0 ? "Primeiro cartão" : "Segundo cartão"}</p>}
                           <div>
-                            <CardBrandPicker />
+                            <CardBrandPicker name={`bandeira-${ci}`} />
                           </div>
                           <select className="w-full max-w-[280px] rounded border bg-background px-2 py-2 text-foreground">
                             <option>Em quantas parcelas deseja pagar?</option>
@@ -335,7 +339,15 @@ function Checkout() {
                               <span>O endereço da fatura do cartão é <b>{(end ?? "").split(" - ")[0]}, {num}</b></span>
                             </label>
                           )}
-                          <button type="button" className="w-full border border-primary/40 py-2.5 font-bold text-primary/60">Pagar usando dois cartões</button>
+                          {doisCartoes && (
+                            <div className="flex items-center gap-2">
+                              <span>Valor *</span>
+                              <span className="flex items-center rounded border bg-background text-foreground"><span className="border-r bg-muted px-2">R$</span><input inputMode="decimal" defaultValue={(total / 2).toFixed(2).replace(".", ",")} className="w-24 px-2 py-0.5 text-right" /></span>
+                            </div>
+                          )}
+                          </div>
+                          ))}
+                          <button type="button" onClick={() => setDoisCartoes((v) => !v)} className="w-full border border-primary/40 py-2.5 font-bold text-primary/60">{doisCartoes ? "Pagar usando um cartão" : "Pagar usando dois cartões"}</button>
                         </div>
                       </div>
                     ) : metodo === "PICPAY" ? (
@@ -416,7 +428,7 @@ function detectBrand(n: string): number {
   return -1;
 }
 
-function CardBrandPicker() {
+function CardBrandPicker({ name = "bandeira" }: { name?: string }) {
   const [num, setNum] = useState("");
   const [sel, setSel] = useState(0);
   const brands: [string, string][] = [["VISA", b0], ["American Express", b1], ["Hipercard", b2], ["Diners", b3], ["Mastercard", b4], ["Elo", b5]];
@@ -439,7 +451,7 @@ function CardBrandPicker() {
       <div className="mt-5 grid grid-cols-6 gap-1 text-center">
         {brands.map(([b, src], k) => (
           <label key={b} className="flex cursor-pointer flex-col items-center gap-1">
-            <input type="radio" name="bandeira" checked={sel === k} onChange={() => setSel(k)} className="h-4 w-4" />
+            <input type="radio" name={name} checked={sel === k} onChange={() => setSel(k)} className="h-4 w-4" />
             <img src={src} alt={b} className="w-full object-contain" />
           </label>
         ))}
