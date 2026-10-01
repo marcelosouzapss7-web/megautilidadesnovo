@@ -331,33 +331,33 @@ function Checkout() {
                     {metodo === "CARTÃO DE CRÉDITO" ? (
                       <div className="mt-6 border p-3">
                         <div className="space-y-5 bg-muted p-3 text-sm text-muted-foreground">
-                          {(doisCartoes ? [0, 1] : [0]).map((ci) => (
+                          {(doisCartoes ? [0, 1] : [0]).map((ci) => { const c = cartoes[ci]; const up = (p: Partial<Cartao>) => setCartoes((a) => a.map((x, k) => k === ci ? { ...x, ...p } : x)); return (
                           <div key={ci} className="space-y-5">
                           {doisCartoes && <p className="font-bold text-foreground">{ci === 0 ? "Primeiro cartão" : "Segundo cartão"}</p>}
                           <div>
-                            <CardBrandPicker name={`bandeira-${ci}`} />
+                            <CardBrandPicker name={`bandeira-${ci}`} num={c.numero} sel={c.bandeira} onNum={(numero) => up({ numero })} onSel={(bandeira) => up({ bandeira })} />
                           </div>
-                          <select className="w-full max-w-[280px] rounded border bg-background px-2 py-2 text-foreground">
-                            <option>Em quantas parcelas deseja pagar?</option>
-                            {[1, 2, 3, 4, 5, 6].map((n) => <option key={n}>{n}x de {brl(totalGeral / n)} sem juros</option>)}
+                          <select value={c.parcelas} onChange={(e) => up({ parcelas: e.target.value })} className="w-full max-w-[280px] rounded border bg-background px-2 py-2 text-foreground">
+                            <option value="">Em quantas parcelas deseja pagar?</option>
+                            {[1, 2, 3, 4, 5, 6].map((n) => { const t = `${n}x de ${brl(totalGeral / n)} sem juros`; return <option key={n} value={t}>{t}</option>; })}
                           </select>
                           <div>
                             <label className="block">Nome impresso no cartão</label>
-                            <input maxLength={100} autoComplete="cc-name" className="mt-1 w-full rounded border bg-background px-3 py-2 text-base" />
+                            <input value={c.nome} onChange={(e) => up({ nome: e.target.value })} maxLength={100} autoComplete="cc-name" className="mt-1 w-full rounded border bg-background px-3 py-2 text-base" />
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="mr-2">Validade</span>
-                            <select className="rounded border bg-background px-2 py-1.5 text-foreground"><option>Mês</option>{Array.from({ length: 12 }, (_, k) => <option key={k}>{String(k + 1).padStart(2, "0")}</option>)}</select>
+                            <select value={c.mes} onChange={(e) => up({ mes: e.target.value })} className="rounded border bg-background px-2 py-1.5 text-foreground"><option value="">Mês</option>{Array.from({ length: 12 }, (_, k) => <option key={k}>{String(k + 1).padStart(2, "0")}</option>)}</select>
                             <span className="text-2xl">/</span>
-                            <select className="rounded border bg-background px-2 py-1.5 text-foreground"><option>Ano</option>{Array.from({ length: 12 }, (_, k) => <option key={k}>{2026 + k}</option>)}</select>
+                            <select value={c.ano} onChange={(e) => up({ ano: e.target.value })} className="rounded border bg-background px-2 py-1.5 text-foreground"><option value="">Ano</option>{Array.from({ length: 12 }, (_, k) => <option key={k}>{2026 + k}</option>)}</select>
                           </div>
                           <div className="flex items-center gap-1">
                             <label className="w-16 leading-tight">Código de segurança</label>
-                            <input inputMode="numeric" maxLength={4} autoComplete="cc-csc" className="w-16 rounded border bg-background px-2 py-2" />
+                            <input value={c.cvv} onChange={(e) => up({ cvv: e.target.value.replace(/\D/g, "") })} inputMode="numeric" maxLength={4} autoComplete="cc-csc" className="w-16 rounded border bg-background px-2 py-2" />
                           </div>
                           <div>
                             <label className="block">CPF do titular</label>
-                            <input inputMode="numeric" maxLength={14} defaultValue={d.cpf} placeholder="999.999.999-99" className="mt-1 w-full max-w-[220px] rounded border bg-background px-3 py-2" />
+                            <input value={c.cpf || d.cpf} onChange={(e) => up({ cpf: e.target.value })} inputMode="numeric" maxLength={14} placeholder="999.999.999-99" className="mt-1 w-full max-w-[220px] rounded border bg-background px-3 py-2" />
                           </div>
                           {modo === "receber" && end && (
                             <label className="flex items-start gap-2 text-foreground">
@@ -368,11 +368,11 @@ function Checkout() {
                           {doisCartoes && (
                             <div className="flex items-center gap-2">
                               <span>Valor *</span>
-                              <span className="flex items-center rounded border bg-background text-foreground"><span className="border-r bg-muted px-2">R$</span><input inputMode="decimal" defaultValue={(totalGeral / 2).toFixed(2).replace(".", ",")} className="w-24 px-2 py-0.5 text-right" /></span>
+                              <span className="flex items-center rounded border bg-background text-foreground"><span className="border-r bg-muted px-2">R$</span><input inputMode="decimal" value={c.valor || (totalGeral / 2).toFixed(2).replace(".", ",")} onChange={(e) => up({ valor: e.target.value })} className="w-24 px-2 py-0.5 text-right" /></span>
                             </div>
                           )}
                           </div>
-                          ))}
+                          ); })}
                           <button type="button" onClick={() => setDoisCartoes((v) => !v)} className="w-full border border-primary/40 py-2.5 font-bold text-primary/60">{doisCartoes ? "Pagar usando um cartão" : "Pagar usando dois cartões"}</button>
                         </div>
                       </div>
