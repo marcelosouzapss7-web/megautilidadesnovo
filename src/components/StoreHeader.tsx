@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Star, User, ShoppingBag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,13 +11,16 @@ export function StoreHeader() {
     queryKey: ["site_settings"],
     queryFn: async () => (await supabase.from("site_settings").select("*").eq("id", 1).maybeSingle()).data,
   });
+  const [menu, setMenu] = useState(false);
   const qtd = useCart().items.reduce((s, i) => s + i.qty, 0);
   return (
     <header className="sticky top-0 z-10 flex items-center justify-between bg-background px-3 py-3 shadow-sm">
       <div className="flex items-center gap-3 text-primary">
+        <button aria-label="Abrir menu" onClick={() => setMenu(true)}>
         <svg width="22" height="18" viewBox="0 0 22 18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
           <path d="M2 2h18M2 9h12M2 16h16" />
         </svg>
+        </button>
         <Search className="h-6 w-6" />
       </div>
       <Link to="/">
@@ -42,6 +46,16 @@ export function StoreHeader() {
         </button>
         <CartDrawer />
       </div>
+      {menu && (
+        <div className="fixed inset-0 z-50 bg-foreground/40" onClick={() => setMenu(false)}>
+          <nav className="h-full w-[77%] max-w-sm bg-background px-6 pt-5" onClick={(e) => e.stopPropagation()} style={{ fontFamily: "Montserrat, sans-serif" }}>
+            {[{ t: "Início", to: "/" }, { t: "Produtos", to: "/" }].map((l) => (
+              <Link key={l.t} to={l.to as "/"} onClick={() => setMenu(false)} className="block border-b py-4 text-[15px] font-semibold text-foreground">{l.t}</Link>
+            ))}
+            <Link to="/carrinho" onClick={() => setMenu(false)} className="block border-b py-4 text-[15px] font-semibold text-foreground">Meu carrinho</Link>
+          </nav>
+        </div>
+      )}
     </header>
   );
 }
