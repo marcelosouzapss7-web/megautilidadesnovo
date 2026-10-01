@@ -45,6 +45,7 @@ function Produto() {
             <p className="pt-4 text-center text-xs text-muted-foreground">REF: {p.id.slice(0, 8).toUpperCase()}</p>
             <h1 className="px-2 pb-4 text-center text-3xl leading-tight text-foreground" style={bebas}>{p.name}</h1>
             <Galeria imgs={p.images?.length ? p.images : p.image_url ? [p.image_url] : []} alt={p.name} onPick={setFoto} />
+            {p.has_sizes !== false && (
             <div className="mt-6 rounded-xl border bg-muted/50 p-3">
               <p className="mb-2 text-sm text-foreground">Tamanho</p>
               <div className="flex gap-2">
@@ -56,6 +57,7 @@ function Produto() {
                 ))}
               </div>
             </div>
+            )}
             <div className="mt-8 text-center">
               {p.old_price != null && Number(p.old_price) > Number(p.price) && (
                 <p className="text-lg text-muted-foreground" style={bebas}>DE: <span className="line-through">{brl(Number(p.old_price))}</span></p>
