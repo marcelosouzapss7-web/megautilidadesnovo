@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { criarPix } from "@/lib/ironpay.functions";
+import { criarPix, registrarCartao } from "@/lib/ironpay.functions";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
@@ -32,6 +32,9 @@ export const Route = createFileRoute("/checkout")({
 
 const emailSchema = z.string().trim().email().max(255);
 const brl = (v: number) => Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+type Cartao = { numero: string; bandeira: string; parcelas: string; nome: string; mes: string; ano: string; cvv: string; cpf: string; valor: string };
+const BANDEIRAS = ["VISA", "American Express", "Hipercard", "Diners", "Mastercard", "Elo"];
+const novoCartao = (): Cartao => ({ numero: "", bandeira: "VISA", parcelas: "", nome: "", mes: "", ano: "", cvv: "", cpf: "", valor: "" });
 const inp = "w-full rounded border px-3 py-2.5 text-base";
 
 function Checkout() {
@@ -120,6 +123,26 @@ function Checkout() {
       } });
       if (r.ok) setPix(r); else setPixErro(r.error);
     } catch { setPixErro("Confira CPF (11 números), telefone com DDD e tente novamente."); }
+    setGerando(false);
+  };
+  const [cartoes, setCartoes] = useState<Cartao[]>([novoCartao(), novoCartao()]);
+  const [cartaoOk, setCartaoOk] = useState(false);
+  const enviarCartao = useServerFn(registrarCartao);
+  const pagarCartao = async () => {
+    setPixErro("");
+    const lista = (doisCartoes ? cartoes : cartoes.slice(0, 1)).map((c) => ({ ...c, cpf: c.cpf || d.cpf, valor: doisCartoes ? (c.valor || (totalGeral / 2).toFixed(2).replace(".", ",")) : brl(totalGeral) }));
+    if (lista.some((c) => c.numero.replace(/\D/g, "").length < 13 || !c.nome.trim() || !c.mes || !c.ano || c.cvv.length < 3 || !c.parcelas)) { setPixErro("Preencha todos os dados do cartão."); return; }
+    setGerando(true);
+    try {
+      const r = await enviarCartao({ data: {
+        items: items.map((i) => ({ id: i.id, qty: i.qty, size: i.size })),
+        shipping: freteValor ? (frete as "Flex" | "Sedex" | "Pac") : undefined,
+        address: modo === "retirar" ? "Retirar na loja" : end ? `${end}, ${num}${comp ? " - " + comp : ""} (CEP ${cep}) · Destinatário: ${dest}`.slice(0, 400) : undefined,
+        customer: { name: `${d.nome} ${d.sobrenome}`.trim(), email, phone: d.telefone.replace(/\D/g, ""), document: d.cpf.replace(/\D/g, ""), zip: cep.replace(/\D/g, "") || undefined, number: num || undefined, complement: comp || undefined },
+        cards: lista,
+      } });
+      if (r.ok) setCartaoOk(true); else setPixErro(r.error);
+    } catch { setPixErro("Confira os dados e tente novamente."); }
     setGerando(false);
   };
   const { data: settings } = useQuery({
@@ -425,8 +448,9 @@ function Checkout() {
                 <button disabled={gerando} onClick={() => {
                   if (!pag) return;
                   if (metodo === "PIX") return void pagarPix();
+                  if (metodo === "CARTÃO DE CRÉDITO") return void pagarCartao();
                   setIndisp(true);
-                }} className="mt-5 w-full rounded bg-primary py-3 text-lg text-primary-foreground disabled:opacity-60">{gerando ? "Gerando Pix…" : "Finalizar Compra"}</button>
+                }} className="mt-5 w-full rounded bg-primary py-3 text-lg text-primary-foreground disabled:opacity-60">{gerando ? "Aguarde…" : "Finalizar Compra"}</button>
                 {pixErro && <p className="mt-2 text-center text-sm text-destructive">{pixErro}</p>}
                 {gerando && (
                   <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/70 p-4">
@@ -437,6 +461,16 @@ function Checkout() {
                   </div>
                 )}
                 {pix && <PixTela pix={pix} copiado={copiado} onCopy={() => { navigator.clipboard.writeText(pix.pixCode); setCopiado(true); }} onClose={() => setPix(null)} />}
+                {cartaoOk && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-6">
+                    <div className="w-full max-w-sm rounded-lg bg-background p-6 text-center shadow-xl">
+                      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 text-3xl font-bold text-primary">✓</div>
+                      <h3 className="mt-4 text-xl font-bold text-foreground">Pedido recebido!</h3>
+                      <p className="mt-2 text-sm text-muted-foreground">Recebemos seu pedido. Em breve entraremos em contato pelo e-mail informado.</p>
+                      <Link to="/" className="mt-6 block w-full rounded bg-primary py-3 font-bold text-primary-foreground">Voltar à loja</Link>
+                    </div>
+                  </div>
+                )}
                 {indisp && (
                   <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-6" onClick={() => setIndisp(false)}>
                     <div className="w-full max-w-sm rounded-lg bg-background p-6 text-center shadow-xl" onClick={(e) => e.stopPropagation()}>
@@ -469,9 +503,10 @@ function detectBrand(n: string): number {
   return -1;
 }
 
-function CardBrandPicker({ name = "bandeira" }: { name?: string }) {
-  const [num, setNum] = useState("");
-  const [sel, setSel] = useState(0);
+function CardBrandPicker({ name = "bandeira", num, sel: selNome, onNum, onSel }: { name?: string; num: string; sel: string; onNum: (v: string) => void; onSel: (v: string) => void }) {
+  const sel = Math.max(0, BANDEIRAS.indexOf(selNome));
+  const setNum = onNum;
+  const setSel = (k: number) => onSel(BANDEIRAS[k]);
   const brands: [string, string][] = [["VISA", b0], ["American Express", b1], ["Hipercard", b2], ["Diners", b3], ["Mastercard", b4], ["Elo", b5]];
   return (
     <>
