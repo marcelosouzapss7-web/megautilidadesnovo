@@ -509,7 +509,7 @@ function Checkout() {
                     </div>
                   </div>
                 )}
-                {pix && <PixTela pix={pix} copiado={copiado} onCopy={() => { navigator.clipboard.writeText(pix.pixCode); setCopiado(true); }} onClose={() => setPix(null)} />}
+                {pix && <PixTela pix={pix} logo={pixLogo} copiado={copiado} onCopy={() => { navigator.clipboard.writeText(pix.pixCode); setCopiado(true); }} onClose={() => setPix(null)} />}
                 {retiradaOk && (
                   <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-6">
                     <div className="w-full max-w-sm rounded-lg bg-background p-6 text-center shadow-xl">
@@ -597,14 +597,15 @@ function CardBrandPicker({ name = "bandeira", cred, num, sel: selNome, onNum, on
   );
 }
 
-function PixTela({ pix, copiado, onCopy, onClose }: { pix: { hash?: string; pixCode: string; qrCode: string | null; amount: number }; copiado: boolean; onCopy: () => void; onClose: () => void }) {
+function PixTela({ pix, logo, copiado, onCopy, onClose }: { pix: { hash?: string; pixCode: string; qrCode: string | null; amount: number }; logo: string | null | undefined; copiado: boolean; onCopy: () => void; onClose: () => void }) {
   const [seg, setSeg] = useState(600);
   useEffect(() => { const t = setInterval(() => setSeg((s) => Math.max(0, s - 1)), 1000); return () => clearInterval(t); }, []);
   const checar = useServerFn(checarPix);
   const [pago, setPago] = useState(false);
   useEffect(() => {
-    if (!pix.hash || pago) return;
-    const t = setInterval(async () => { try { const r = await checar({ data: { hash: pix.hash! } }); if (r.pago) { setPago(true); cart.clear(); } } catch { /* tenta de novo */ } }, 5000);
+    const hash = pix.hash;
+    if (!hash || pago) return;
+    const t = setInterval(async () => { try { const r = await checar({ data: { hash } }); if (r.pago) { setPago(true); cart.clear(); } } catch { /* tenta de novo */ } }, 5000);
     return () => clearInterval(t);
   }, [pix.hash, pago]);
   if (pago) return (
@@ -623,7 +624,7 @@ function PixTela({ pix, copiado, onCopy, onClose }: { pix: { hash?: string; pixC
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-background">
       <div className="sticky top-0 border-b bg-background py-4 text-center">
-        <p className="text-5xl font-light tracking-wide" style={{ color: "#32BCAD" }}>◆ pix</p>
+        {logo ? <img src={logo} alt="Pagamento Pix" className="mx-auto h-14 max-w-[220px] object-contain" /> : <p className="text-2xl font-bold text-foreground">Pagamento Pix</p>}
         <p className="mt-1 text-sm text-muted-foreground">Tempo restante {Math.floor(seg / 60)}:{String(seg % 60).padStart(2, "0")}</p>
       </div>
       <div className="mx-auto max-w-xs space-y-6 px-4 py-6">
