@@ -83,13 +83,12 @@ function Produto() {
 
 function Galeria({ imgs, alt }: { imgs: string[]; alt: string }) {
   const [i, setI] = useState(0);
-  const giro = Math.min(imgs.length, 3);
-  const demo = i === 3;
+  const [tocou, setTocou] = useState(false);
   useEffect(() => {
-    if (giro < 2 || demo) return;
-    const t = setInterval(() => setI((v) => (v + 1) % giro), 3000);
-    return () => clearInterval(t);
-  }, [giro, demo]);
+    if (imgs.length < 2 || tocou) return;
+    const t = setTimeout(() => setI((v) => (v === 0 ? 1 : v)), 3000);
+    return () => clearTimeout(t);
+  }, [imgs.length, tocou]);
   if (!imgs.length) return <div className="aspect-square w-full bg-muted" />;
   return (
     <div>
@@ -103,7 +102,7 @@ function Galeria({ imgs, alt }: { imgs: string[]; alt: string }) {
       {imgs.length > 1 && (
         <div className="mt-3 flex justify-center gap-3">
           {imgs.map((src, k) => (
-            <button key={k} aria-label={`Foto ${k + 1}`} onClick={() => setI(k)}
+            <button key={k} aria-label={`Foto ${k + 1}`} onClick={() => { setTocou(true); setI(k); }}
               className={`h-12 w-12 overflow-hidden rounded-full border-2 p-0.5 ${k === i ? "border-primary" : "border-transparent"}`}>
               <img src={src} alt="" className="h-full w-full rounded-full object-cover" />
             </button>
