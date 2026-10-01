@@ -94,6 +94,7 @@ export type Database = {
       }
       site_settings: {
         Row: {
+          hero_image_url: string | null
           id: number
           logo_url: string | null
           payment_logo_url: string | null
@@ -101,6 +102,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          hero_image_url?: string | null
           id?: number
           logo_url?: string | null
           payment_logo_url?: string | null
@@ -108,6 +110,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          hero_image_url?: string | null
           id?: number
           logo_url?: string | null
           payment_logo_url?: string | null

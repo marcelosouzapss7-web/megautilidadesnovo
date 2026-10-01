@@ -9,10 +9,10 @@ import { cart } from "@/lib/cart";
 export const Route = createFileRoute("/produto/$id")({
   head: () => ({
     meta: [
-      { title: "Produto — Mercado Shopping" },
-      { name: "description", content: "Veja detalhes, tamanhos e preço do produto no Mercado Shopping." },
-      { property: "og:title", content: "Produto — Mercado Shopping" },
-      { property: "og:description", content: "Veja detalhes, tamanhos e preço do produto no Mercado Shopping." },
+      { title: "Produto — MEGA SHOPPING" },
+      { name: "description", content: "Veja detalhes, tamanhos e preço do produto no MEGA SHOPPING." },
+      { property: "og:title", content: "Produto — MEGA SHOPPING" },
+      { property: "og:description", content: "Veja detalhes, tamanhos e preço do produto no MEGA SHOPPING." },
       { property: "og:type", content: "product" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
