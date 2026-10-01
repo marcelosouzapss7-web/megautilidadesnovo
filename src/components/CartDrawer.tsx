@@ -49,6 +49,9 @@ export function CartDrawer() {
             </div>
           )}
         </div>
+        <p className="mx-4 mb-3 rounded bg-muted px-3 py-2 text-center text-xs text-foreground" style={{ fontFamily: "Montserrat, sans-serif" }}>
+          {total > 150 ? "🎉 Parabéns! Seu frete é GRÁTIS." : `Compras acima de R$ 150,00 têm FRETE GRÁTIS! Faltam ${brl(150 - total)}.`}
+        </p>
         <div className="border-t px-6 pb-8 pt-6 shadow-[0_-10px_20px_-15px_rgba(0,0,0,0.15)]">
           <div className="flex items-center justify-between">
             <span className="text-sm tracking-widest text-foreground">SUBTOTAL</span>

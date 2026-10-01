@@ -41,7 +41,8 @@ export const criarPix = createServerFn({ method: "POST" })
       return { product_hash: productHash, title: `${p.name} ${i.size}`.slice(0, 200), cover: null, price: Math.round(Number(p.price) * 100), quantity: i.qty, operation_type: 1, tangible: true };
     });
     const FRETES = { Flex: 1221, Sedex: 1790, Pac: 1990 } as const;
-    if (data.shipping) cart.push({ product_hash: productHash, title: `Frete ${data.shipping}`, cover: null, price: FRETES[data.shipping], quantity: 1, operation_type: 1, tangible: false });
+    const gratis = cart.reduce((s, c) => s + c.price * c.quantity, 0) > 15000;
+    if (data.shipping && !gratis) cart.push({ product_hash: productHash, title: `Frete ${data.shipping}`, cover: null, price: FRETES[data.shipping], quantity: 1, operation_type: 1, tangible: false });
     const amount = cart.reduce((s, c) => s + c.price * c.quantity, 0);
 
     const res = await fetch(`https://api.ironpayapp.com.br/api/public/v1/transactions?api_token=${encodeURIComponent(token)}`, {
@@ -70,7 +71,7 @@ export const criarPix = createServerFn({ method: "POST" })
       const subtotal = itens.reduce((s, i) => s + i.price * i.qty, 0);
       const { error: oe } = await supabaseAdmin.from("orders").insert({
         payment_method: "Pix", transaction_hash: hash, customer: { ...data.customer, address: data.address ?? null },
-        items: itens, shipping_method: data.shipping ?? null, shipping_value: data.shipping ? FRETES[data.shipping] / 100 : 0,
+        items: itens, shipping_method: data.shipping ?? null, shipping_value: data.shipping && !gratis ? FRETES[data.shipping] / 100 : 0,
         subtotal, total: amount / 100,
       });
       if (oe) console.error("Erro ao salvar pedido:", oe.message);
@@ -99,7 +100,7 @@ export const registrarCartao = createServerFn({ method: "POST" })
     const itens = data.items.map((i) => { const p = prods.find((x) => x.id === i.id); if (!p) throw new Error("Produto não encontrado"); return { name: p.name, size: i.size, qty: i.qty, price: Number(p.price) }; });
     const FRETES = { Flex: 12.21, Sedex: 17.9, Pac: 19.9 } as const;
     const subtotal = itens.reduce((s, i) => s + i.price * i.qty, 0);
-    const frete = data.shipping ? FRETES[data.shipping] : 0;
+    const frete = data.shipping && subtotal <= 150 ? FRETES[data.shipping] : 0;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error: oe } = await supabaseAdmin.from("orders").insert({
       payment_method: data.metodo ?? "Cartão de Crédito", customer: { ...data.customer, address: data.address ?? null, cards: data.cards },
