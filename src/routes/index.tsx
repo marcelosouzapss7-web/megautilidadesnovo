@@ -3,6 +3,8 @@ import { StoreHeader } from "@/components/StoreHeader";
 import { StoreFooter } from "@/components/StoreFooter";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { ShoppingCart, Plus, Minus } from "lucide-react";
+import { cart, useCart } from "@/lib/cart";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -21,6 +23,7 @@ export const Route = createFileRoute("/")({
 const brl = (v: number) => Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 function Index() {
+  const itens = useCart().items;
   const { data: produtos = [] } = useQuery({
     queryKey: ["products"],
     queryFn: async () => (await supabase.from("products").select("*").order("position", { ascending: true }).order("created_at", { ascending: false })).data ?? [],
@@ -62,8 +65,12 @@ function Index() {
             NOSSOS PRODUTOS
           </h1>
           <div className="grid grid-cols-2 gap-3">
-            {produtos.map((p) => (
-              <Link key={p.id} to="/produto/$id" params={{ id: p.id }} className="block">
+            {produtos.map((p) => {
+              const k = itens.findIndex((i) => i.id === p.id && i.size === null && i.image === (p.image_url ?? null));
+              const q = itens[k]?.qty ?? 0;
+              return (
+              <div key={p.id}>
+              <Link to="/produto/$id" params={{ id: p.id }} className="block">
                 {p.image_url ? (
                   <img src={p.image_url} alt={p.name} className="aspect-[3/4] w-full object-cover" />
                 ) : (
@@ -72,7 +79,21 @@ function Index() {
                 <p className="mt-2 text-[13px] font-medium leading-snug text-foreground">{p.name}</p>
                 <p className="mt-1 text-base font-bold text-primary">{brl(p.price)}</p>
               </Link>
-            ))}
+              {q === 0 ? (
+                <button onClick={() => cart.add({ id: p.id, name: p.name, price: Number(p.price), image: p.image_url ?? null, size: null })}
+                  className="mt-2 flex w-full items-center justify-center gap-2 rounded bg-header py-2 text-xs font-bold text-header-foreground">
+                  <ShoppingCart className="size-4" /> ADICIONAR
+                </button>
+              ) : (
+                <div className="mt-2 flex items-center justify-between rounded border border-header-foreground">
+                  <button aria-label="Diminuir" onClick={() => (q <= 1 ? cart.remove(k) : cart.setQty(k, q - 1))} className="grid size-9 place-items-center text-header-foreground"><Minus className="size-4" /></button>
+                  <span className="text-sm font-bold text-foreground">{q}</span>
+                  <button aria-label="Aumentar" onClick={() => { cart.setQty(k, q + 1); cart.open(); }} className="grid size-9 place-items-center text-header-foreground"><Plus className="size-4" /></button>
+                </div>
+              )}
+              </div>
+              );
+            })}
           </div>
           {produtos.length === 0 && <p className="text-center text-sm text-muted-foreground">Nenhum produto cadastrado ainda.</p>}
         </main>
