@@ -1,0 +1,1 @@
+ALTER TABLE public.products ADD COLUMN images text[] NOT NULL DEFAULT '{}';

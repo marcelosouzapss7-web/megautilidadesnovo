@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { StoreHeader } from "@/components/StoreHeader";
 import { StoreFooter } from "@/components/StoreFooter";
@@ -41,11 +41,7 @@ function Produto() {
           <main className="px-3 pb-10">
             <p className="pt-4 text-center text-xs text-muted-foreground">REF: {p.id.slice(0, 8).toUpperCase()}</p>
             <h1 className="px-2 pb-4 text-center text-3xl leading-tight text-foreground" style={bebas}>{p.name}</h1>
-            {p.image_url ? (
-              <img src={p.image_url} alt={p.name} className="w-full object-cover" />
-            ) : (
-              <div className="aspect-square w-full bg-muted" />
-            )}
+            <Galeria imgs={p.images?.length ? p.images : p.image_url ? [p.image_url] : []} alt={p.name} />
             <div className="mt-6 rounded-xl border bg-muted/50 p-3">
               <p className="mb-2 text-sm text-foreground">Tamanho</p>
               <div className="flex gap-2">
@@ -81,6 +77,35 @@ function Produto() {
         )}
         <StoreFooter />
       </div>
+    </div>
+  );
+}
+
+function Galeria({ imgs, alt }: { imgs: string[]; alt: string }) {
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    if (imgs.length < 2) return;
+    const t = setInterval(() => setI((v) => (v + 1) % imgs.length), 3000);
+    return () => clearInterval(t);
+  }, [imgs.length]);
+  if (!imgs.length) return <div className="aspect-square w-full bg-muted" />;
+  return (
+    <div>
+      <div className="overflow-hidden">
+        <div className="flex transition-transform duration-700 ease-in-out" style={{ transform: `translateX(-${i * 100}%)` }}>
+          {imgs.map((src, k) => (
+            <img key={k} src={src} alt={`${alt} ${k + 1}`} className="w-full shrink-0 object-cover" />
+          ))}
+        </div>
+      </div>
+      {imgs.length > 1 && (
+        <div className="mt-3 flex justify-center gap-2">
+          {imgs.map((_, k) => (
+            <button key={k} aria-label={`Foto ${k + 1}`} onClick={() => setI(k)}
+              className={`h-2 w-2 rounded-full ${k === i ? "bg-primary" : "bg-muted-foreground/30"}`} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
