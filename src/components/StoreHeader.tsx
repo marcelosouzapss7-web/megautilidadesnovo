@@ -5,6 +5,7 @@ import { Search, User, ShoppingBag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cart, useCart } from "@/lib/cart";
 import { CartDrawer } from "@/components/CartDrawer";
+import logoMegaShopping from "@/assets/logo-mega-shopping.png.asset.json";
 
 export function StoreHeader() {
   const { data: settings, isLoading } = useQuery({
@@ -40,14 +41,7 @@ export function StoreHeader() {
           <div className="h-9 w-40" />
         ) : settings?.logo_url ? (
           <img src={settings.logo_url} alt="Logo da loja" className="h-10 max-w-[180px] object-contain" />
-        ) : (
-          <div className="flex flex-col items-center leading-none">
-            <div className="rounded-lg bg-header-foreground px-3 py-1.5">
-              <span className="text-lg font-extrabold tracking-tight text-background">MEGA</span>
-            </div>
-            <span className="mt-0.5 text-[10px] font-extrabold tracking-[0.22em] text-header-foreground">SHOPPING</span>
-          </div>
-        )}
+        ) : <img src={logoMegaShopping.url} alt="MEGA SHOPPING" className="h-12 w-auto object-contain" />}
       </Link>
       <div className="flex items-center gap-3 text-header-foreground">
         <User className="h-6 w-6" />
