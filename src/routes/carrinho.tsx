@@ -26,7 +26,7 @@ export function Etapas({ etapa = 2 }: { etapa?: number }) {
     <div className="px-5 pb-5 pt-4">
       <div className="relative mx-3 h-2">
         <div className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded bg-muted" />
-        <div className="absolute left-0 top-1/2 h-1 -translate-y-1/2" style={{ width: etapa >= 3 ? "100%" : "50%" }} data-x=" rounded bg-primary/50" />
+        <div className="absolute left-0 top-1/2 h-1 -translate-y-1/2 rounded bg-primary/50" style={{ width: etapa >= 3 ? "100%" : "50%" }} />
         {[0, 50, 100].map((l) => (
           <span key={l} className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/60" style={{ left: `${l}%` }} />
         ))}
