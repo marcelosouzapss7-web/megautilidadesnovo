@@ -9,6 +9,7 @@ import { fileToDataUrl } from "@/lib/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Toaster } from "@/components/ui/sonner";
 
 export const Route = createFileRoute("/admin")({
@@ -345,7 +346,7 @@ function Config() {
           rows={5}
           defaultValue={(settings as any)?.footer_text ?? "Manchester Comércio Varejista de Roupas e Acessórios Ltda\nCNPJ: 37.729.889/0006-87\nAvenida Benedito Quina da Silva, 586, Galpão B3\nLoteamento Multivias - Jundiaí - SP"}
           key={(settings as any)?.footer_text ?? "padrao"}
-          onBlur={(e) => save({ footer_text: e.target.value.trim() || null })}
+          onBlur={(e: React.FocusEvent<HTMLTextAreaElement>) => save({ footer_text: e.target.value.trim() || null })}
           disabled={saving}
         />
         <p className="text-xs text-muted-foreground">O texto é salvo ao sair do campo.</p>
