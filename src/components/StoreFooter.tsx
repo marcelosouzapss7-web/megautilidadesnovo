@@ -84,10 +84,10 @@ export function StoreFooter() {
       </a>
 
       <div className="mt-8 border-t border-muted-foreground/20 pt-8 text-center text-xs leading-relaxed">
-        <p>Manchester Comércio Varejista de Roupas e Acessórios Ltda</p>
-        <p>CNPJ: 37.729.889/0006-87</p>
-        <p>Avenida Benedito Quina da Silva, 586, Galpão B3</p>
-        <p>Loteamento Multivias - Jundiaí - SP</p>
+        {((settings as any)?.footer_text || "Manchester Comércio Varejista de Roupas e Acessórios Ltda\nCNPJ: 37.729.889/0006-87\nAvenida Benedito Quina da Silva, 586, Galpão B3\nLoteamento Multivias - Jundiaí - SP")
+          .split("\n")
+          .filter((l: string) => l.trim())
+          .map((l: string, i: number) => <p key={i}>{l}</p>)}
       </div>
     </footer>
   );

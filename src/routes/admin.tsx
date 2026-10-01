@@ -9,6 +9,7 @@ import { fileToDataUrl } from "@/lib/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Toaster } from "@/components/ui/sonner";
 
 export const Route = createFileRoute("/admin")({
@@ -293,7 +294,7 @@ function Config() {
     queryFn: async () => (await supabase.from("site_settings").select("*").eq("id", 1).maybeSingle()).data,
   });
 
-  async function save(patch: { logo_url?: string | null; payment_logo_url?: string | null; pix_logo_url?: string | null; hero_image_url?: string | null }) {
+  async function save(patch: { logo_url?: string | null; payment_logo_url?: string | null; pix_logo_url?: string | null; hero_image_url?: string | null; footer_text?: string | null }) {
     setSaving(true);
     const { error } = await supabase.from("site_settings").upsert({
       id: 1,
@@ -301,6 +302,7 @@ function Config() {
       payment_logo_url: settings?.payment_logo_url ?? null,
       pix_logo_url: (settings as any)?.pix_logo_url ?? null,
       hero_image_url: (settings as any)?.hero_image_url ?? null,
+      footer_text: (settings as any)?.footer_text ?? null,
       ...patch,
       updated_at: new Date().toISOString(),
     });
@@ -338,6 +340,17 @@ function Config() {
       {bloco("Imagem principal (aparece abaixo do cabeçalho)", "hero_image_url", 1600, "Remover imagem principal")}
       {bloco("Bandeira (formas de pagamento no rodapé)", "payment_logo_url", 900, "Remover bandeira")}
       {bloco("Pix (imagem na forma de pagamento PIX)", "pix_logo_url", 600, "Remover imagem do Pix")}
+      <div className="space-y-4 rounded-xl bg-background p-4 shadow-sm">
+        <Label>Descrição do rodapé (dados da empresa, uma linha por campo)</Label>
+        <Textarea
+          rows={5}
+          defaultValue={(settings as any)?.footer_text ?? "Manchester Comércio Varejista de Roupas e Acessórios Ltda\nCNPJ: 37.729.889/0006-87\nAvenida Benedito Quina da Silva, 586, Galpão B3\nLoteamento Multivias - Jundiaí - SP"}
+          key={(settings as any)?.footer_text ?? "padrao"}
+          onBlur={(e: React.FocusEvent<HTMLTextAreaElement>) => save({ footer_text: e.target.value.trim() || null })}
+          disabled={saving}
+        />
+        <p className="text-xs text-muted-foreground">O texto é salvo ao sair do campo.</p>
+      </div>
     </div>
   );
 }

@@ -97,6 +97,7 @@ export type Database = {
       }
       site_settings: {
         Row: {
+          footer_text: string | null
           hero_image_url: string | null
           id: number
           logo_url: string | null
@@ -105,6 +106,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          footer_text?: string | null
           hero_image_url?: string | null
           id?: number
           logo_url?: string | null
@@ -113,6 +115,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          footer_text?: string | null
           hero_image_url?: string | null
           id?: number
           logo_url?: string | null
