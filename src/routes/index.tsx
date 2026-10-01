@@ -44,12 +44,12 @@ function Index() {
           <section className="relative bg-background px-[15px] pt-0">
             <img src={hero} alt="Promoção da loja" className="block aspect-[4/5] w-full object-contain object-top" />
             <div className="absolute inset-x-[15px] bottom-4">
-              <div className="inline-block bg-primary px-6 py-2.5">
-                <span className="text-2xl font-extrabold uppercase tracking-tight text-primary-foreground">Até 50% OFF</span>
+              <div className="inline-block bg-[#e31c24] px-6 py-2.5">
+                <span className="text-2xl font-extrabold uppercase tracking-tight text-white">Até 50% OFF</span>
               </div>
               <button
                 onClick={irParaProdutos}
-                className="ml-2 mt-3 block rounded bg-header px-8 py-2.5 text-base font-bold text-header-foreground shadow-md"
+                className="animate-blink-3s ml-2 mt-3 block rounded bg-header px-8 py-2.5 text-base font-bold text-header-foreground shadow-md"
               >
                 Comprar agora
               </button>
