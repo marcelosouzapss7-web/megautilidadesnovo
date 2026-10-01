@@ -293,7 +293,7 @@ function Config() {
     queryFn: async () => (await supabase.from("site_settings").select("*").eq("id", 1).maybeSingle()).data,
   });
 
-  async function save(patch: { logo_url?: string | null; payment_logo_url?: string | null; pix_logo_url?: string | null; hero_image_url?: string | null }) {
+  async function save(patch: { logo_url?: string | null; payment_logo_url?: string | null; pix_logo_url?: string | null; hero_image_url?: string | null; footer_text?: string | null }) {
     setSaving(true);
     const { error } = await supabase.from("site_settings").upsert({
       id: 1,
@@ -301,6 +301,7 @@ function Config() {
       payment_logo_url: settings?.payment_logo_url ?? null,
       pix_logo_url: (settings as any)?.pix_logo_url ?? null,
       hero_image_url: (settings as any)?.hero_image_url ?? null,
+      footer_text: (settings as any)?.footer_text ?? null,
       ...patch,
       updated_at: new Date().toISOString(),
     });
