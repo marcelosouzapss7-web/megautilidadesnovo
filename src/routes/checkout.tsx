@@ -96,7 +96,7 @@ function Checkout() {
 
   const fretes = [
     { n: "Sedex", p: "Em até 1 dia útil", v: 12 },
-    { n: "Motoboy", p: "Em até 5 dias úteis", v: 7 },
+    { n: "Motoboy", p: "Entrega em até 40 minutos", v: 7 },
   ];
 
   const [pag, setPag] = useState(false);
