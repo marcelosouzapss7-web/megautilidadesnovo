@@ -273,12 +273,13 @@ function Config() {
     queryFn: async () => (await supabase.from("site_settings").select("*").eq("id", 1).maybeSingle()).data,
   });
 
-  async function save(patch: { logo_url?: string | null; payment_logo_url?: string | null }) {
+  async function save(patch: { logo_url?: string | null; payment_logo_url?: string | null; pix_logo_url?: string | null }) {
     setSaving(true);
     const { error } = await supabase.from("site_settings").upsert({
       id: 1,
       logo_url: settings?.logo_url ?? null,
       payment_logo_url: settings?.payment_logo_url ?? null,
+      pix_logo_url: (settings as any)?.pix_logo_url ?? null,
       ...patch,
       updated_at: new Date().toISOString(),
     });
@@ -288,11 +289,11 @@ function Config() {
     qc.invalidateQueries({ queryKey: ["site_settings"] });
   }
 
-  const bloco = (titulo: string, key: "logo_url" | "payment_logo_url", max: number, remover: string) => (
+  const bloco = (titulo: string, key: "logo_url" | "payment_logo_url" | "pix_logo_url", max: number, remover: string) => (
     <div className="space-y-4 rounded-xl bg-background p-4 shadow-sm">
       <Label>{titulo}</Label>
       <div className="flex h-24 items-center justify-center rounded-lg border bg-muted p-2">
-        {settings?.[key] ? <img src={settings[key]!} alt={titulo} className="max-h-full max-w-full object-contain" /> : <span className="text-sm text-muted-foreground">Nenhuma imagem enviada</span>}
+        {(settings as any)?.[key] ? <img src={(settings as any)[key]} alt={titulo} className="max-h-full max-w-full object-contain" /> : <span className="text-sm text-muted-foreground">Nenhuma imagem enviada</span>}
       </div>
       <Input
         type="file"
@@ -303,7 +304,7 @@ function Config() {
           if (f) await save({ [key]: await fileToDataUrl(f, max) });
         }}
       />
-      {settings?.[key] && (
+      {(settings as any)?.[key] && (
         <Button variant="outline" onClick={() => save({ [key]: null })} disabled={saving}>{remover}</Button>
       )}
     </div>
@@ -314,6 +315,7 @@ function Config() {
       <h1 className="text-2xl font-extrabold">Configuração</h1>
       {bloco("Logo do cabeçalho (substitui a estrela e o nome)", "logo_url", 600, "Remover logo")}
       {bloco("Bandeira (formas de pagamento no rodapé)", "payment_logo_url", 900, "Remover bandeira")}
+      {bloco("Pix (imagem na forma de pagamento PIX)", "pix_logo_url", 600, "Remover imagem do Pix")}
     </div>
   );
 }

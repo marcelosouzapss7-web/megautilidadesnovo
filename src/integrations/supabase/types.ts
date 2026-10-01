@@ -49,18 +49,21 @@ export type Database = {
           id: number
           logo_url: string | null
           payment_logo_url: string | null
+          pix_logo_url: string | null
           updated_at: string
         }
         Insert: {
           id?: number
           logo_url?: string | null
           payment_logo_url?: string | null
+          pix_logo_url?: string | null
           updated_at?: string
         }
         Update: {
           id?: number
           logo_url?: string | null
           payment_logo_url?: string | null
+          pix_logo_url?: string | null
           updated_at?: string
         }
         Relationships: []
