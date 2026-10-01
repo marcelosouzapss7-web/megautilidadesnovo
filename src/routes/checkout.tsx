@@ -305,16 +305,7 @@ function Checkout() {
                       <div className="mt-6 border p-3">
                         <div className="space-y-5 bg-muted p-3 text-sm text-muted-foreground">
                           <div>
-                            <label className="block">Número do cartão</label>
-                            <input inputMode="numeric" maxLength={19} autoComplete="cc-number" className="mt-1 w-full rounded border bg-background px-3 py-2 text-base" />
-                          </div>
-                          <div className="grid grid-cols-6 gap-1 text-center">
-                            {[["VISA", b0], ["American Express", b1], ["Hipercard", b2], ["Diners", b3], ["Mastercard", b4], ["Elo", b5]].map(([b, src], k) => (
-                              <label key={b} className="flex cursor-pointer flex-col items-center gap-1">
-                                <input type="radio" name="bandeira" defaultChecked={k === 0} className="h-4 w-4" />
-                                <img src={src} alt={b} className="w-full object-contain" />
-                              </label>
-                            ))}
+                            <CardBrandPicker />
                           </div>
                           <select className="w-full max-w-[280px] rounded border bg-background px-2 py-2 text-foreground">
                             <option>Em quantas parcelas deseja pagar?</option>
