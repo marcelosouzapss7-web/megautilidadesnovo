@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { ArrowRight, Instagram, Facebook, MessageCircle } from "lucide-react";
 
 const grupos = [
@@ -20,6 +22,10 @@ function TikTok() {
 export function StoreFooter() {
   const [email, setEmail] = useState("");
   const [ok, setOk] = useState(false);
+  const { data: settings } = useQuery({
+    queryKey: ["site_settings"],
+    queryFn: async () => (await supabase.from("site_settings").select("*").eq("id", 1).maybeSingle()).data,
+  });
   const titulo = "pb-4 pt-8 text-center text-base font-bold text-foreground";
 
   return (
@@ -59,11 +65,15 @@ export function StoreFooter() {
         <a href="#" className="grid h-12 w-12 place-items-center rounded-full bg-primary text-primary-foreground"><TikTok /></a>
       </div>
 
-      <div className="mt-6 flex flex-wrap justify-center gap-2">
-        {pagamentos.map((p) => (
-          <span key={p} className="rounded bg-background px-2 py-0.5 text-[11px] font-bold italic text-foreground/80">{p}</span>
-        ))}
-      </div>
+      {settings?.payment_logo_url ? (
+        <img src={settings.payment_logo_url} alt="Formas de pagamento" className="mx-auto mt-6 max-h-24 max-w-full object-contain" />
+      ) : (
+        <div className="mt-6 flex flex-wrap justify-center gap-2">
+          {pagamentos.map((p) => (
+            <span key={p} className="rounded bg-background px-2 py-0.5 text-[11px] font-bold italic text-foreground/80">{p}</span>
+          ))}
+        </div>
+      )}
 
       <a href="https://wa.me/5511918509381" target="_blank" rel="noreferrer" className="mt-8 flex items-center justify-center gap-2">
         <span className="grid h-12 w-12 place-items-center rounded-full bg-primary text-primary-foreground"><MessageCircle className="h-6 w-6" /></span>
