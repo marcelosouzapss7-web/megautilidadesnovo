@@ -99,7 +99,7 @@
   --sidebar-border: oklch(0.929 0.013 255.508);
   --sidebar-ring: oklch(0.704 0.04 256.788);
   --footer: rgb(249 249 249);
-  --header: oklch(0.845 0.166 88);
+  --header: oklch(0.889043 0.179975 95.498);
   --header-foreground: oklch(0.615 0.226 26);
 }
 
@@ -137,7 +137,7 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.551 0.027 264.364);
   --footer: rgb(249 249 249);
-  --header: oklch(0.845 0.166 88);
+  --header: oklch(0.889043 0.179975 95.498);
   --header-foreground: oklch(0.615 0.226 26);
 }
 
