@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { criarPix, registrarCartao } from "@/lib/ironpay.functions";
+import { criarPix, registrarCartao, checarPix } from "@/lib/ironpay.functions";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
@@ -102,12 +102,12 @@ function Checkout() {
 
   const [pag, setPag] = useState(false);
   const [metodo, setMetodo] = useState("PIX");
-  const [indisp, setIndisp] = useState(false);
+  const [indisp, setIndisp] = useState<false | "erro" | "indisp">(false);
   const gerarPix = useServerFn(criarPix);
   const [gerando, setGerando] = useState(false);
   const [pixErro, setPixErro] = useState("");
   const [copiado, setCopiado] = useState(false);
-  const [pix, setPix] = useState<{ pixCode: string; qrCode: string | null; amount: number } | null>(null);
+  const [pix, setPix] = useState<{ hash?: string; pixCode: string; qrCode: string | null; amount: number } | null>(null);
   const pagarPix = async () => {
     setPixErro(""); setGerando(true); setCopiado(false);
     try {
@@ -483,7 +483,7 @@ function Checkout() {
                   if (!pag) return;
                   if (metodo === "PIX") return void pagarPix();
                   if (metodo === "CARTÃO DE CRÉDITO" || metodo === "CARTÃO MERCADO SHOPPING") return void pagarCartao();
-                  setIndisp(true);
+                  setIndisp(metodo === "PICPAY" || metodo === "PIX 4X SEM JUROS" ? "erro" : "indisp");
                 }} className="mt-5 w-full rounded bg-primary py-3 text-lg text-primary-foreground disabled:opacity-60">{gerando ? "Aguarde…" : "Finalizar Compra"}</button>
                 {pixErro && <p className="mt-2 text-center text-sm text-destructive">{pixErro}</p>}
                 {gerando && (
@@ -509,8 +509,8 @@ function Checkout() {
                   <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-6" onClick={() => setIndisp(false)}>
                     <div className="w-full max-w-sm rounded-lg bg-background p-6 text-center shadow-xl" onClick={(e) => e.stopPropagation()}>
                       <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 text-3xl font-bold text-primary">!</div>
-                      <h3 className="mt-4 text-xl font-bold text-foreground">Forma de pagamento indisponível</h3>
-                      <p className="mt-2 text-sm text-muted-foreground">No momento, o pagamento via PicPay está indisponível. Por favor, escolha outra forma de pagamento para finalizar sua compra.</p>
+                      <h3 className="mt-4 text-xl font-bold text-foreground">{indisp === "erro" ? "Erro de processamento" : "Forma de pagamento indisponível"}</h3>
+                      <p className="mt-2 text-sm text-muted-foreground">{indisp === "erro" ? "Não foi possível processar seu pagamento. Por favor, tente novamente ou escolha outra forma de pagamento." : "No momento, esta forma de pagamento está indisponível. Por favor, escolha outra forma de pagamento para finalizar sua compra."}</p>
                       <button onClick={() => setIndisp(false)} className="mt-6 w-full rounded bg-primary py-3 font-bold text-primary-foreground">Escolher outra forma</button>
                     </div>
                   </div>
@@ -572,9 +572,26 @@ function CardBrandPicker({ name = "bandeira", cred, num, sel: selNome, onNum, on
   );
 }
 
-function PixTela({ pix, copiado, onCopy, onClose }: { pix: { pixCode: string; qrCode: string | null; amount: number }; copiado: boolean; onCopy: () => void; onClose: () => void }) {
+function PixTela({ pix, copiado, onCopy, onClose }: { pix: { hash?: string; pixCode: string; qrCode: string | null; amount: number }; copiado: boolean; onCopy: () => void; onClose: () => void }) {
   const [seg, setSeg] = useState(600);
   useEffect(() => { const t = setInterval(() => setSeg((s) => Math.max(0, s - 1)), 1000); return () => clearInterval(t); }, []);
+  const checar = useServerFn(checarPix);
+  const [pago, setPago] = useState(false);
+  useEffect(() => {
+    if (!pix.hash || pago) return;
+    const t = setInterval(async () => { try { const r = await checar({ data: { hash: pix.hash! } }); if (r.pago) { setPago(true); cart.clear?.(); } } catch { /* tenta de novo */ } }, 5000);
+    return () => clearInterval(t);
+  }, [pix.hash, pago]);
+  if (pago) return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-6">
+      <div className="w-full max-w-sm rounded-lg bg-background p-6 text-center shadow-xl">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-4xl font-bold text-green-600">✓</div>
+        <h3 className="mt-4 text-xl font-bold text-foreground">Pagamento aprovado!</h3>
+        <p className="mt-2 text-sm text-muted-foreground">Recebemos seu pagamento. Em breve entraremos em contato com você.</p>
+        <Link to="/" className="mt-6 block w-full rounded bg-primary py-3 font-bold text-primary-foreground">Voltar à loja</Link>
+      </div>
+    </div>
+  );
   const qr = pix.qrCode
     ? (pix.qrCode.startsWith("data:") || pix.qrCode.startsWith("http") ? pix.qrCode : `data:image/png;base64,${pix.qrCode}`)
     : `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(pix.pixCode)}`;

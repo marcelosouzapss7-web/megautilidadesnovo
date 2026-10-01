@@ -108,3 +108,23 @@ export const registrarCartao = createServerFn({ method: "POST" })
     if (oe) { console.error("Erro ao salvar pedido:", oe.message); return { ok: false as const, error: "Não foi possível registrar o pedido." }; }
     return { ok: true as const };
   });
+
+export const checarPix = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ hash: z.string().min(3).max(100).regex(/^[\w-]+$/) }).parse(d))
+  .handler(async ({ data }) => {
+    const token = process.env["IRONPAY_API_TOKEN"];
+    if (!token) return { pago: false };
+    try {
+      const res = await fetch(`https://api.ironpayapp.com.br/api/public/v1/transactions/${data.hash}?api_token=${encodeURIComponent(token)}`, { headers: { Accept: "application/json" } });
+      if (!res.ok) return { pago: false };
+      const j = await res.json();
+      const t = j.data ?? j;
+      const st = String(t.payment_status ?? t.status ?? "").toLowerCase();
+      const pago = ["paid", "approved", "pago", "aprovado", "completed"].includes(st);
+      if (pago) {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        await supabaseAdmin.from("orders").update({ status: "pago" }).eq("transaction_hash", data.hash).eq("status", "aguardando pagamento");
+      }
+      return { pago };
+    } catch { return { pago: false }; }
+  });
