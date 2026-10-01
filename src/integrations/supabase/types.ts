@@ -60,6 +60,7 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          has_sizes: boolean
           id: string
           image_url: string | null
           images: string[]
@@ -71,6 +72,7 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
+          has_sizes?: boolean
           id?: string
           image_url?: string | null
           images?: string[]
@@ -82,6 +84,7 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
+          has_sizes?: boolean
           id?: string
           image_url?: string | null
           images?: string[]

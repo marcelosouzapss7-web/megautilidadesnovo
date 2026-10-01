@@ -60,7 +60,7 @@ function Carrinho() {
               <div key={k} className="flex gap-4 bg-background p-4 shadow-sm">
                 {it.image ? <img src={it.image} alt={it.name} className="h-32 w-[88px] object-cover" /> : <div className="h-32 w-[88px] bg-muted" />}
                 <div className="flex-1">
-                  <p className="text-sm leading-5 text-foreground">{it.name} {it.size}</p>
+                  <p className="text-sm leading-5 text-foreground">{it.name}{it.size ? ` — Tam. ${it.size}` : ""}</p>
                   <p className="mt-2 text-xs font-bold italic text-foreground">MEGA SHOPPING</p>
                   <p className="text-lg font-bold text-foreground">{brl(it.price * it.qty)}</p>
                   <button onClick={() => cart.remove(k)} className="text-xs text-foreground underline">remover</button>

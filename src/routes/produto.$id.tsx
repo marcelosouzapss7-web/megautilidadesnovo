@@ -45,6 +45,7 @@ function Produto() {
             <p className="pt-4 text-center text-xs text-muted-foreground">REF: {p.id.slice(0, 8).toUpperCase()}</p>
             <h1 className="px-2 pb-4 text-center text-3xl leading-tight text-foreground" style={bebas}>{p.name}</h1>
             <Galeria imgs={p.images?.length ? p.images : p.image_url ? [p.image_url] : []} alt={p.name} onPick={setFoto} />
+            {p.has_sizes !== false && (
             <div className="mt-6 rounded-xl border bg-muted/50 p-3">
               <p className="mb-2 text-sm text-foreground">Tamanho</p>
               <div className="flex gap-2">
@@ -56,6 +57,7 @@ function Produto() {
                 ))}
               </div>
             </div>
+            )}
             <div className="mt-8 text-center">
               {p.old_price != null && Number(p.old_price) > Number(p.price) && (
                 <p className="text-lg text-muted-foreground" style={bebas}>DE: <span className="line-through">{brl(Number(p.old_price))}</span></p>
@@ -67,10 +69,10 @@ function Produto() {
               )}
               <button
                 onClick={() => {
-                  if (!tam) { setAviso(true); return; }
+                  if (p.has_sizes !== false && !tam) { setAviso(true); return; }
                   setAviso(false);
                   const fotos: string[] = p.images?.length ? p.images : p.image_url ? [p.image_url] : [];
-                  cart.add({ id: p.id, name: p.name, price: Number(p.price), image: fotos[foto] ?? fotos[0] ?? null, size: tam });
+                  cart.add({ id: p.id, name: p.name, price: Number(p.price), image: fotos[foto] ?? fotos[0] ?? null, size: p.has_sizes === false ? null : tam });
                 }}
                 className="mt-5 w-48 rounded-full bg-[hsl(85_75%_42%)] py-3 font-serif font-bold text-primary-foreground">COMPRAR</button>
               {aviso && <p className="mt-2 text-sm text-destructive">Escolha um tamanho antes de comprar.</p>}

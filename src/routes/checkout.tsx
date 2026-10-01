@@ -462,7 +462,7 @@ function Checkout() {
                   {items.map((it, k) => (
                     <div key={k} className="flex items-center gap-3">
                       {it.image ? <img src={it.image} alt={it.name} className="h-20 w-14 object-cover" /> : <div className="h-20 w-14 bg-muted" />}
-                      <p className="flex-1 text-xs font-bold text-foreground">{it.name} {it.size}</p>
+                      <p className="flex-1 text-xs font-bold text-foreground">{it.name}{it.size ? ` ${it.size}` : ""}</p>
                       <span className="text-[10px] font-bold">QTD: {it.qty}</span>
                       <span className="text-sm font-bold">{brl(it.price * it.qty)}</span>
                     </div>
