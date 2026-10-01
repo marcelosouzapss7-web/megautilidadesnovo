@@ -156,7 +156,7 @@ function Produtos() {
   const [editId, setEditId] = useState<string | null>(null);
   const { data: produtos = [] } = useQuery({
     queryKey: ["products"],
-    queryFn: async () => (await supabase.from("products").select("*").order("created_at", { ascending: false })).data ?? [],
+    queryFn: async () => (await supabase.from("products").select("*").order("position", { ascending: true }).order("created_at", { ascending: false })).data ?? [],
   });
 
   function startEdit(p: (typeof produtos)[number]) {
@@ -251,6 +251,10 @@ function Produtos() {
             <div className="space-y-1 p-3">
               <p className="line-clamp-2 text-sm font-medium">{p.name}</p>
               <p className="font-bold text-primary">{formatBRL(p.price)}</p>
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">Posição
+                <Input type="number" min={0} defaultValue={(p as any).position ?? 0} className="h-8 w-20"
+                  onBlur={async (e) => { const v = Math.max(0, parseInt(e.target.value) || 0); if (v === ((p as any).position ?? 0)) return; const { error } = await supabase.from("products").update({ position: v } as any).eq("id", p.id); if (error) toast.error("Não foi possível salvar"); else { toast.success("Posição salva"); qc.invalidateQueries(); } }} />
+              </label>
               <Button variant="outline" size="sm" className="w-full" onClick={() => startEdit(p)}>
                 <Pencil className="h-4 w-4" /> Editar
               </Button>
