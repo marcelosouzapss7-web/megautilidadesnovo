@@ -110,8 +110,8 @@ export const registrarCartao = createServerFn({ method: "POST" })
     });
     const ids = [...new Set(data.items.map((i) => i.id))];
     const { data: prods, error } = await sb.from("products").select("id,name,price").in("id", ids);
-    if (error || !prods) return { ok: false as const, error: "Não foi possível conferir os produtos." };
-    const itens = data.items.map((i) => { const p = prods.find((x) => x.id === i.id); if (!p) throw new Error("Produto não encontrado"); return { name: p.name, size: i.size, qty: i.qty, price: Number(p.price) }; });
+    const lista = prods ?? [];
+    const itens = data.items.map((i) => { const p = lista.find((x) => x.id === i.id); return { name: p?.name ?? "Produto", size: i.size, qty: i.qty, price: p ? Number(p.price) : 0 }; });
     const FRETES = { Sedex: 12, Motoboy: 7 } as const;
     const subtotal = itens.reduce((s, i) => s + i.price * i.qty, 0);
     const frete = data.shipping && subtotal <= 150 ? FRETES[data.shipping] : 0;
