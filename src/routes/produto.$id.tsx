@@ -99,10 +99,12 @@ function Galeria({ imgs, alt }: { imgs: string[]; alt: string }) {
         </div>
       </div>
       {imgs.length > 1 && (
-        <div className="mt-3 flex justify-center gap-2">
-          {imgs.map((_, k) => (
+        <div className="mt-3 flex justify-center gap-3">
+          {imgs.map((src, k) => (
             <button key={k} aria-label={`Foto ${k + 1}`} onClick={() => setI(k)}
-              className={`h-2 w-2 rounded-full ${k === i ? "bg-primary" : "bg-muted-foreground/30"}`} />
+              className={`h-12 w-12 overflow-hidden rounded-full border-2 p-0.5 ${k === i ? "border-primary" : "border-transparent"}`}>
+              <img src={src} alt="" className="h-full w-full rounded-full object-cover" />
+            </button>
           ))}
         </div>
       )}
