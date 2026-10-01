@@ -29,7 +29,7 @@ export function StoreFooter() {
   const titulo = "pb-4 pt-8 text-center text-base font-bold text-foreground";
 
   return (
-    <footer className="bg-muted px-4 pb-10 pt-8 text-foreground">
+    <footer className="bg-footer px-4 pb-10 pt-8 text-foreground">
       <h2 className="text-center text-base font-bold">INSCREVA-SE PARA RECEBER NOSSAS NOVIDADES</h2>
       <form
         onSubmit={(e) => { e.preventDefault(); if (email) { setOk(true); setEmail(""); } }}
