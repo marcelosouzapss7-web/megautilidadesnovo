@@ -41,9 +41,9 @@ function Index() {
         <StoreHeader />
 
         {hero && (
-          <section className="relative bg-background">
-            <img src={hero} alt="Promoção da loja" className="block w-full" />
-            <div className="absolute inset-x-0 bottom-4">
+          <section className="relative bg-background px-[15px] pt-0">
+            <img src={hero} alt="Promoção da loja" className="block aspect-[4/5] w-full object-contain object-top" />
+            <div className="absolute inset-x-[15px] bottom-4">
               <div className="inline-block bg-primary px-6 py-2.5">
                 <span className="text-2xl font-extrabold uppercase tracking-tight text-primary-foreground">Até 50% OFF</span>
               </div>
