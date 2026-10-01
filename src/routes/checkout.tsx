@@ -354,7 +354,7 @@ function Checkout() {
                     {metodo === "CARTÃO DE CRÉDITO" ? (
                       <div className="mt-6 border p-3">
                         <div className="space-y-5 bg-muted p-3 text-sm text-muted-foreground">
-                          {(doisCartoes ? [0, 1] : [0]).map((ci) => { const c = cartoes[ci]; const up = (p: Partial<Cartao>) => setCartoes((a) => a.map((x, k) => k === ci ? { ...x, ...p } : x)); return (
+                          {(doisCartoes ? [0, 1] : [0]).map((ci) => { const c = cartoes[ci] ?? novoCartao(); const up = (p: Partial<Cartao>) => setCartoes((a) => a.map((x, k) => k === ci ? { ...x, ...p } : x)); return (
                           <div key={ci} className="space-y-5">
                           {doisCartoes && <p className="font-bold text-foreground">{ci === 0 ? "Primeiro cartão" : "Segundo cartão"}</p>}
                           <div>
@@ -506,7 +506,7 @@ function detectBrand(n: string): number {
 function CardBrandPicker({ name = "bandeira", num, sel: selNome, onNum, onSel }: { name?: string; num: string; sel: string; onNum: (v: string) => void; onSel: (v: string) => void }) {
   const sel = Math.max(0, BANDEIRAS.indexOf(selNome));
   const setNum = onNum;
-  const setSel = (k: number) => onSel(BANDEIRAS[k]);
+  const setSel = (k: number) => onSel(BANDEIRAS[k] ?? "VISA");
   const brands: [string, string][] = [["VISA", b0], ["American Express", b1], ["Hipercard", b2], ["Diners", b3], ["Mastercard", b4], ["Elo", b5]];
   return (
     <>
