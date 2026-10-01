@@ -295,7 +295,53 @@ function Checkout() {
                         </button>
                       ))}
                     </div>
-                    {metodo === "PICPAY" ? (
+                    {metodo === "CARTÃO DE CRÉDITO" ? (
+                      <div className="mt-6 border p-3">
+                        <div className="space-y-5 bg-muted p-3 text-sm text-muted-foreground">
+                          <div>
+                            <label className="block">Número do cartão</label>
+                            <input inputMode="numeric" maxLength={19} autoComplete="cc-number" className="mt-1 w-full rounded border bg-background px-3 py-2 text-base" />
+                          </div>
+                          <div className="grid grid-cols-6 gap-1 text-center">
+                            {["VISA", "AMEX", "Hipercard", "Diners", "Master", "elo"].map((b, k) => (
+                              <label key={b} className="flex cursor-pointer flex-col items-center gap-1">
+                                <input type="radio" name="bandeira" defaultChecked={k === 0} className="h-4 w-4" />
+                                <span className="w-full rounded border bg-background py-1 text-[9px] font-bold text-foreground">{b}</span>
+                              </label>
+                            ))}
+                          </div>
+                          <select className="w-full max-w-[280px] rounded border bg-background px-2 py-2 text-foreground">
+                            <option>Em quantas parcelas deseja pagar?</option>
+                            {[1, 2, 3, 4, 5, 6].map((n) => <option key={n}>{n}x de {brl(total / n)} sem juros</option>)}
+                          </select>
+                          <div>
+                            <label className="block">Nome impresso no cartão</label>
+                            <input maxLength={100} autoComplete="cc-name" className="mt-1 w-full rounded border bg-background px-3 py-2 text-base" />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="mr-2">Validade</span>
+                            <select className="rounded border bg-background px-2 py-1.5 text-foreground"><option>Mês</option>{Array.from({ length: 12 }, (_, k) => <option key={k}>{String(k + 1).padStart(2, "0")}</option>)}</select>
+                            <span className="text-2xl">/</span>
+                            <select className="rounded border bg-background px-2 py-1.5 text-foreground"><option>Ano</option>{Array.from({ length: 12 }, (_, k) => <option key={k}>{2026 + k}</option>)}</select>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <label className="w-16 leading-tight">Código de segurança</label>
+                            <input inputMode="numeric" maxLength={4} autoComplete="cc-csc" className="w-16 rounded border bg-background px-2 py-2" />
+                          </div>
+                          <div>
+                            <label className="block">CPF do titular</label>
+                            <input inputMode="numeric" maxLength={14} defaultValue={d.cpf} placeholder="999.999.999-99" className="mt-1 w-full max-w-[220px] rounded border bg-background px-3 py-2" />
+                          </div>
+                          {modo === "receber" && end && (
+                            <label className="flex items-start gap-2 text-foreground">
+                              <input type="checkbox" defaultChecked className="mt-1" />
+                              <span>O endereço da fatura do cartão é <b>{(end ?? "").split(" - ")[0]}, {num}</b></span>
+                            </label>
+                          )}
+                          <button type="button" className="w-full border border-primary/40 py-2.5 font-bold text-primary/60">Pagar usando dois cartões</button>
+                        </div>
+                      </div>
+                    ) : metodo === "PICPAY" ? (
                       <div className="mt-6 border p-5 text-foreground">
                         <p className="text-4xl font-extrabold tracking-tight text-[hsl(140_65%_45%)]">PicPay</p>
                         <p className="mt-5 text-base font-bold">Pague com PicPay, direto do seu celular.</p>
