@@ -12,6 +12,16 @@ export function StoreHeader() {
     queryFn: async () => (await supabase.from("site_settings").select("*").eq("id", 1).maybeSingle()).data,
   });
   const [menu, setMenu] = useState(false);
+  const [busca, setBusca] = useState(false);
+  const [termo, setTermo] = useState("");
+  const { data: produtos = [] } = useQuery({
+    queryKey: ["busca_produtos"],
+    enabled: busca,
+    queryFn: async () => (await supabase.from("products").select("id,name,price,image_url")).data ?? [],
+  });
+  const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const t = norm(termo.trim());
+  const achados = t ? produtos.filter((p) => norm(p.name).includes(t)) : [];
   const qtd = useCart().items.reduce((s, i) => s + i.qty, 0);
   return (
     <header className="sticky top-0 z-10 flex items-center justify-between bg-background px-3 py-3 shadow-sm">
@@ -21,7 +31,9 @@ export function StoreHeader() {
           <path d="M2 2h18M2 9h12M2 16h16" />
         </svg>
         </button>
-        <Search className="h-6 w-6" />
+        <button aria-label="Pesquisar" onClick={() => { setBusca((b) => !b); setTermo(""); }}>
+          <Search className="h-6 w-6" />
+        </button>
       </div>
       <Link to="/">
         {isLoading ? (
@@ -46,6 +58,30 @@ export function StoreHeader() {
         </button>
         <CartDrawer />
       </div>
+      {busca && (
+        <div className="fixed inset-x-0 bottom-0 top-[60px] z-40 bg-foreground/60" onClick={() => { setBusca(false); setTermo(""); }}>
+          <div className="border-b bg-background px-3 py-3" onClick={(e) => e.stopPropagation()}>
+            <input autoFocus value={termo} onChange={(e) => setTermo(e.target.value)} placeholder="O QUE VOCÊ ESTÁ PROCURANDO?" className="w-full bg-transparent text-sm outline-none placeholder:text-foreground" />
+          </div>
+          {t.length > 0 && (
+            <div className="max-h-full overflow-y-auto px-6 pb-40 pt-6">
+              {achados.length === 0 ? (
+                <p className="text-center text-sm text-background">Nenhum produto encontrado.</p>
+              ) : (
+                <div className="grid grid-cols-2 gap-6">
+                  {achados.map((p) => (
+                    <Link key={p.id} to="/produto/$id" params={{ id: p.id }} onClick={() => { setBusca(false); setTermo(""); }} className="flex flex-col items-center text-center">
+                      {p.image_url && <img src={p.image_url} alt={p.name} className="aspect-[2/3] w-full max-w-[120px] rounded object-cover" />}
+                      <span className="mt-3 text-xs font-semibold uppercase text-background">{p.name}</span>
+                      <span className="mt-2 text-sm font-bold text-background">R$ {Number(p.price).toFixed(2).replace(".", ",")}</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
       {menu && (
         <div className="fixed inset-0 z-50 bg-foreground/40" onClick={() => setMenu(false)}>
           <nav className="h-full w-[77%] max-w-sm bg-background px-6 pt-5" onClick={(e) => e.stopPropagation()} style={{ fontFamily: "Montserrat, sans-serif" }}>
