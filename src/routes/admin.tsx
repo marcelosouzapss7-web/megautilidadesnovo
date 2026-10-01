@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
-import { Package, Settings, LogOut, Trash2, Store, Pencil } from "lucide-react";
+import { Package, Settings, LogOut, Trash2, Store, Pencil, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { fileToDataUrl } from "@/lib/image";
