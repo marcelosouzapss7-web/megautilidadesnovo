@@ -3,7 +3,7 @@ import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 
 const schema = z.object({
-  items: z.array(z.object({ id: z.string().uuid(), qty: z.number().int().min(1).max(99), size: z.string().max(10) })).min(1).max(50),
+  items: z.array(z.object({ id: z.string().uuid(), qty: z.number().int().min(1).max(99), size: z.string().max(10).nullable() })).min(1).max(50),
   address: z.string().max(400).optional(),
   shipping: z.enum(["Sedex", "Motoboy"]).optional(),
   customer: z.object({
@@ -38,7 +38,7 @@ export const criarPix = createServerFn({ method: "POST" })
     const cart = data.items.map((i) => {
       const p = prods.find((x) => x.id === i.id);
       if (!p) throw new Error("Produto não encontrado");
-      return { product_hash: productHash, title: `${p.name} ${i.size}`.slice(0, 200), cover: null, price: Math.round(Number(p.price) * 100), quantity: i.qty, operation_type: 1, tangible: true };
+      return { product_hash: productHash, title: (i.size ? `${p.name} ${i.size}` : p.name).slice(0, 200), cover: null, price: Math.round(Number(p.price) * 100), quantity: i.qty, operation_type: 1, tangible: true };
     });
     const FRETES = { Sedex: 1200, Motoboy: 700 } as const;
     const gratis = cart.reduce((s, c) => s + c.price * c.quantity, 0) > 15000;
