@@ -49,7 +49,7 @@ function Index() {
               </div>
               <button
                 onClick={irParaProdutos}
-                className="animate-blink-3s ml-4 mt-2 block rounded bg-header px-5 py-1.5 text-xs font-bold text-header-foreground shadow-md"
+                className="animate-blink-3s ml-2 mt-2 block rounded bg-header px-5 py-1.5 text-xs font-bold text-header-foreground shadow-md"
               >
                 Comprar agora
               </button>
