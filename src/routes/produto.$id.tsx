@@ -28,6 +28,7 @@ function Produto() {
   const [tam, setTam] = useState<string | null>(null);
   const [aviso, setAviso] = useState(false);
   const [cep, setCep] = useState("");
+  const [foto, setFoto] = useState(0);
   const { data: p, isLoading } = useQuery({
     queryKey: ["product", id],
     queryFn: async () => (await supabase.from("products").select("*").eq("id", id).maybeSingle()).data,
@@ -43,7 +44,7 @@ function Produto() {
           <main className="px-3 pb-10">
             <p className="pt-4 text-center text-xs text-muted-foreground">REF: {p.id.slice(0, 8).toUpperCase()}</p>
             <h1 className="px-2 pb-4 text-center text-3xl leading-tight text-foreground" style={bebas}>{p.name}</h1>
-            <Galeria imgs={p.images?.length ? p.images : p.image_url ? [p.image_url] : []} alt={p.name} />
+            <Galeria imgs={p.images?.length ? p.images : p.image_url ? [p.image_url] : []} alt={p.name} onPick={setFoto} />
             <div className="mt-6 rounded-xl border bg-muted/50 p-3">
               <p className="mb-2 text-sm text-foreground">Tamanho</p>
               <div className="flex gap-2">
@@ -62,7 +63,8 @@ function Produto() {
                 onClick={() => {
                   if (!tam) { setAviso(true); return; }
                   setAviso(false);
-                  cart.add({ id: p.id, name: p.name, price: Number(p.price), image: p.images?.[0] ?? p.image_url ?? null, size: tam });
+                  const fotos: string[] = p.images?.length ? p.images : p.image_url ? [p.image_url] : [];
+                  cart.add({ id: p.id, name: p.name, price: Number(p.price), image: fotos[foto] ?? fotos[0] ?? null, size: tam });
                 }}
                 className="mt-5 w-48 rounded-full bg-[hsl(85_75%_42%)] py-3 font-serif font-bold text-primary-foreground">COMPRAR</button>
               {aviso && <p className="mt-2 text-sm text-destructive">Escolha um tamanho antes de comprar.</p>}
@@ -90,9 +92,10 @@ function Produto() {
   );
 }
 
-function Galeria({ imgs, alt }: { imgs: string[]; alt: string }) {
+function Galeria({ imgs, alt, onPick }: { imgs: string[]; alt: string; onPick: (k: number) => void }) {
   const [i, setI] = useState(0);
   const [tocou, setTocou] = useState(false);
+  useEffect(() => { if (i < 3) onPick(i); }, [i]);
   useEffect(() => {
     if (imgs.length < 2 || tocou) return;
     const t = setTimeout(() => setI((v) => (v === 0 ? 1 : v)), 3000);
