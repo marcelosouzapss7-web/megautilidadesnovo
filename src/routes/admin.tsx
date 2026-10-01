@@ -339,6 +339,17 @@ function Config() {
       {bloco("Imagem principal (aparece abaixo do cabeçalho)", "hero_image_url", 1600, "Remover imagem principal")}
       {bloco("Bandeira (formas de pagamento no rodapé)", "payment_logo_url", 900, "Remover bandeira")}
       {bloco("Pix (imagem na forma de pagamento PIX)", "pix_logo_url", 600, "Remover imagem do Pix")}
+      <div className="space-y-4 rounded-xl bg-background p-4 shadow-sm">
+        <Label>Descrição do rodapé (dados da empresa, uma linha por campo)</Label>
+        <Textarea
+          rows={5}
+          defaultValue={(settings as any)?.footer_text ?? "Manchester Comércio Varejista de Roupas e Acessórios Ltda\nCNPJ: 37.729.889/0006-87\nAvenida Benedito Quina da Silva, 586, Galpão B3\nLoteamento Multivias - Jundiaí - SP"}
+          key={(settings as any)?.footer_text ?? "padrao"}
+          onBlur={(e) => save({ footer_text: e.target.value.trim() || null })}
+          disabled={saving}
+        />
+        <p className="text-xs text-muted-foreground">O texto é salvo ao sair do campo.</p>
+      </div>
     </div>
   );
 }
