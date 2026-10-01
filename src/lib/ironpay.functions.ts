@@ -110,6 +110,29 @@ export const registrarCartao = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+// Retirada na loja: NÃO processa pagamento, apenas registra o pedido em análise
+export const registrarRetirada = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => schema.parse(d))
+  .handler(async ({ data }) => {
+    const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
+    const sb = createClient(process.env["SUPABASE_URL"]!, key, {
+      auth: { persistSession: false },
+      global: { fetch: (input, init) => { const h = new Headers(init?.headers); if (h.get("Authorization") === `Bearer ${key}`) h.delete("Authorization"); h.set("apikey", key); return fetch(input, { ...init, headers: h }); } },
+    });
+    const ids = [...new Set(data.items.map((i) => i.id))];
+    const { data: prods, error } = await sb.from("products").select("id,name,price").in("id", ids);
+    if (error || !prods) return { ok: false as const, error: "Não foi possível conferir os produtos." };
+    const itens = data.items.map((i) => { const p = prods.find((x) => x.id === i.id); if (!p) throw new Error("Produto não encontrado"); return { name: p.name, size: i.size, qty: i.qty, price: Number(p.price) }; });
+    const subtotal = itens.reduce((s, i) => s + i.price * i.qty, 0);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error: oe } = await supabaseAdmin.from("orders").insert({
+      payment_method: "Retirada na loja", status: "em análise", customer: { ...data.customer, address: data.address ?? null },
+      items: itens, shipping_method: null, shipping_value: 0, subtotal, total: subtotal,
+    });
+    if (oe) { console.error("Erro ao salvar pedido:", oe.message); return { ok: false as const, error: "Não foi possível registrar o pedido." }; }
+    return { ok: true as const };
+  });
+
 export const checarPix = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ hash: z.string().min(3).max(100).regex(/^[\w-]+$/) }).parse(d))
   .handler(async ({ data }) => {
