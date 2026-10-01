@@ -7,6 +7,12 @@ import { StoreHeader } from "@/components/StoreHeader";
 import { StoreFooter } from "@/components/StoreFooter";
 import { useCart } from "@/lib/cart";
 import { Etapas } from "./carrinho";
+import b0 from "@/assets/bandeiras/b0.png";
+import b1 from "@/assets/bandeiras/b1.png";
+import b2 from "@/assets/bandeiras/b2.png";
+import b3 from "@/assets/bandeiras/b3.png";
+import b4 from "@/assets/bandeiras/b4.png";
+import b5 from "@/assets/bandeiras/b5.png";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({
@@ -303,10 +309,10 @@ function Checkout() {
                             <input inputMode="numeric" maxLength={19} autoComplete="cc-number" className="mt-1 w-full rounded border bg-background px-3 py-2 text-base" />
                           </div>
                           <div className="grid grid-cols-6 gap-1 text-center">
-                            {["VISA", "AMEX", "Hipercard", "Diners", "Master", "elo"].map((b, k) => (
+                            {[["VISA", b0], ["American Express", b1], ["Hipercard", b2], ["Diners", b3], ["Mastercard", b4], ["Elo", b5]].map(([b, src], k) => (
                               <label key={b} className="flex cursor-pointer flex-col items-center gap-1">
                                 <input type="radio" name="bandeira" defaultChecked={k === 0} className="h-4 w-4" />
-                                <span className="w-full rounded border bg-background py-1 text-[9px] font-bold text-foreground">{b}</span>
+                                <img src={src} alt={b} className="w-full object-contain" />
                               </label>
                             ))}
                           </div>
