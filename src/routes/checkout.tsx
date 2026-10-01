@@ -403,3 +403,47 @@ function Checkout() {
     </div>
   );
 }
+
+function detectBrand(n: string): number {
+  const d = n.replace(/\D/g, "");
+  if (!d) return -1;
+  if (/^(4011|4312|4389|4514|4576|5041|5066|5067|509|6277|6362|6363|650|6516|6550)/.test(d)) return 5;
+  if (/^(606282|3841)/.test(d)) return 2;
+  if (/^3[47]/.test(d)) return 1;
+  if (/^3(0[0-5]|[68])/.test(d)) return 3;
+  if (/^(5[1-5]|2[2-7])/.test(d)) return 4;
+  if (/^4/.test(d)) return 0;
+  return -1;
+}
+
+function CardBrandPicker() {
+  const [num, setNum] = useState("");
+  const [sel, setSel] = useState(0);
+  const brands: [string, string][] = [["VISA", b0], ["American Express", b1], ["Hipercard", b2], ["Diners", b3], ["Mastercard", b4], ["Elo", b5]];
+  return (
+    <>
+      <label className="block">Número do cartão</label>
+      <input
+        inputMode="numeric"
+        maxLength={19}
+        autoComplete="cc-number"
+        value={num}
+        onChange={(e) => {
+          const v = e.target.value.replace(/\D/g, "").slice(0, 16).replace(/(\d{4})(?=\d)/g, "$1 ");
+          setNum(v);
+          const b = detectBrand(v);
+          if (b >= 0) setSel(b);
+        }}
+        className="mt-1 w-full rounded border bg-background px-3 py-2 text-base"
+      />
+      <div className="mt-5 grid grid-cols-6 gap-1 text-center">
+        {brands.map(([b, src], k) => (
+          <label key={b} className="flex cursor-pointer flex-col items-center gap-1">
+            <input type="radio" name="bandeira" checked={sel === k} onChange={() => setSel(k)} className="h-4 w-4" />
+            <img src={src} alt={b} className="w-full object-contain" />
+          </label>
+        ))}
+      </div>
+    </>
+  );
+}
