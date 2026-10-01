@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { criarPix } from "@/lib/ironpay.functions";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
@@ -98,6 +100,26 @@ function Checkout() {
   const [pag, setPag] = useState(false);
   const [metodo, setMetodo] = useState("PIX");
   const [indisp, setIndisp] = useState(false);
+  const gerarPix = useServerFn(criarPix);
+  const [gerando, setGerando] = useState(false);
+  const [pixErro, setPixErro] = useState("");
+  const [copiado, setCopiado] = useState(false);
+  const [pix, setPix] = useState<{ pixCode: string; qrCode: string | null; amount: number } | null>(null);
+  const pagarPix = async () => {
+    setPixErro(""); setGerando(true); setCopiado(false);
+    try {
+      const r = await gerarPix({ data: {
+        items: items.map((i) => ({ id: i.id, qty: i.qty, size: i.size })),
+        customer: {
+          name: `${d.nome} ${d.sobrenome}`.trim(), email,
+          phone: d.telefone.replace(/\D/g, ""), document: d.cpf.replace(/\D/g, ""),
+          zip: cep.replace(/\D/g, "") || undefined, number: num || undefined, complement: comp || undefined,
+        },
+      } });
+      if (r.ok) setPix(r); else setPixErro(r.error);
+    } catch { setPixErro("Confira CPF (11 números), telefone com DDD e tente novamente."); }
+    setGerando(false);
+  };
   const { data: settings } = useQuery({
     queryKey: ["site_settings"],
     queryFn: async () => (await supabase.from("site_settings").select("*").eq("id", 1).maybeSingle()).data,
@@ -395,7 +417,26 @@ function Checkout() {
                   <div className="flex justify-between"><span>SUBTOTAL</span><span className="font-bold">{brl(total)}</span></div>
                   <div className="flex justify-between text-base"><span className="font-bold">TOTAL</span><span>{brl(total)}</span></div>
                 </div>
-                <button onClick={() => { if (pag && metodo === "PICPAY") setIndisp(true); }} className="mt-5 w-full rounded bg-primary py-3 text-lg text-primary-foreground">Finalizar Compra</button>
+                <button disabled={gerando} onClick={() => {
+                  if (!pag) return;
+                  if (metodo === "PIX") return void pagarPix();
+                  setIndisp(true);
+                }} className="mt-5 w-full rounded bg-primary py-3 text-lg text-primary-foreground disabled:opacity-60">{gerando ? "Gerando Pix…" : "Finalizar Compra"}</button>
+                {pixErro && <p className="mt-2 text-center text-sm text-destructive">{pixErro}</p>}
+                {pix && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-6">
+                    <div className="w-full max-w-sm rounded-lg bg-background p-6 text-center shadow-xl">
+                      <h3 className="text-xl font-bold text-foreground">Pague com Pix</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">Valor: {brl(pix.amount / 100)}</p>
+                      {pix.qrCode && <img src={pix.qrCode.startsWith("data:") ? pix.qrCode : `data:image/png;base64,${pix.qrCode}`} alt="QR Code Pix" className="mx-auto mt-4 h-52 w-52" />}
+                      <p className="mt-4 text-sm text-foreground">Ou copie o código Pix:</p>
+                      <textarea readOnly value={pix.pixCode} rows={3} className="mt-2 w-full rounded border bg-muted p-2 text-xs" />
+                      <button onClick={() => { navigator.clipboard.writeText(pix.pixCode); setCopiado(true); }} className="mt-3 w-full rounded bg-primary py-3 font-bold text-primary-foreground">{copiado ? "Código copiado!" : "Copiar código Pix"}</button>
+                      <p className="mt-3 text-xs text-muted-foreground">O Pix vence em 24 horas.</p>
+                      <button onClick={() => setPix(null)} className="mt-3 text-sm text-muted-foreground underline">Fechar</button>
+                    </div>
+                  </div>
+                )}
                 {indisp && (
                   <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-6" onClick={() => setIndisp(false)}>
                     <div className="w-full max-w-sm rounded-lg bg-background p-6 text-center shadow-xl" onClick={(e) => e.stopPropagation()}>
