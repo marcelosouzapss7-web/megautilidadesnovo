@@ -309,7 +309,7 @@ function Checkout() {
                                     <p className={`text-base ${frete === f.n ? "text-foreground" : "text-muted-foreground"}`}>{f.n}</p>
                                     <p className="text-xs text-muted-foreground">{f.p}</p>
                                   </div>
-                                  <span className="border-l pl-3 text-muted-foreground">{brl(f.v)}</span>
+                                  <span className="border-l pl-3 text-muted-foreground">{freteGratis ? "GRÁTIS" : brl(f.v)}</span>
                                 </label>
                               ))}
                             </div>
