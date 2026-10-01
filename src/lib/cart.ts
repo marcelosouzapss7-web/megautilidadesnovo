@@ -32,7 +32,7 @@ export const cart = {
   add(item: Omit<CartItem, "qty">) {
     load();
     const items = [...state.items];
-    const ex = items.find((i) => i.id === item.id && i.size === item.size);
+    const ex = items.find((i) => i.id === item.id && i.size === item.size && i.image === item.image);
     if (ex) ex.qty += 1; else items.push({ ...item, qty: 1 });
     set({ items: items.map((i) => ({ ...i })), open: true, toast: true });
     clearTimeout(toastTimer);
