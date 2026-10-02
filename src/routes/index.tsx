@@ -116,7 +116,15 @@ function Index() {
               );
             })}
           </div>
-          {produtos.length === 0 && <p className="text-center text-sm text-muted-foreground">Nenhum produto cadastrado ainda.</p>}
+          {produtos.length === 0 && (
+            <div className="flex items-center justify-center gap-2 py-8">
+              <span
+                aria-label="Carregando"
+                className="size-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary"
+              />
+              <p className="text-sm text-muted-foreground">Carregando produtos, por favor aguarde</p>
+            </div>
+          )}
         </main>
         <StoreFooter />
       </div>
