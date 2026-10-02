@@ -1,29 +1,22 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { StoreHeader } from "@/components/StoreHeader";
 import { StoreFooter } from "@/components/StoreFooter";
-import { infiniteQueryOptions, queryOptions, useInfiniteQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ShoppingCart, Plus, Minus } from "lucide-react";
 import { cart, useCart } from "@/lib/cart";
-import { useEffect, useRef, useState } from "react";
 
-const PRODUTOS_POR_ETAPA = 10;
-
-const produtosQuery = infiniteQueryOptions({
+const produtosQuery = queryOptions({
   queryKey: ["products"],
-  initialPageParam: 0,
-  queryFn: async ({ pageParam }) => {
-    const inicio = pageParam * PRODUTOS_POR_ETAPA;
-    const { data } = await supabase
+  queryFn: async () => {
+    const { data, error } = await supabase
       .from("products")
       .select("id,name,price,old_price,has_sizes,position,created_at,image_url:id")
       .order("position", { ascending: true })
-      .order("created_at", { ascending: false })
-      .range(inicio, inicio + PRODUTOS_POR_ETAPA - 1);
+      .order("created_at", { ascending: false });
+    if (error) throw error;
     return data ?? [];
   },
-  getNextPageParam: (ultimaPagina, paginas) =>
-    ultimaPagina.length === PRODUTOS_POR_ETAPA ? paginas.length : undefined,
 });
 
 const settingsQuery = queryOptions({
@@ -32,10 +25,11 @@ const settingsQuery = queryOptions({
 });
 
 export const Route = createFileRoute("/")({
-  loader: ({ context }) => {
-    context.queryClient.prefetchInfiniteQuery(produtosQuery);
-    return context.queryClient.ensureQueryData(settingsQuery);
-  },
+  loader: ({ context }) =>
+    Promise.all([
+      context.queryClient.ensureQueryData(produtosQuery),
+      context.queryClient.ensureQueryData(settingsQuery),
+    ]),
   head: () => ({
     meta: [
       { title: "MEGA SHOPPING — Nossos Produtos" },
@@ -52,12 +46,26 @@ export const Route = createFileRoute("/")({
   }),
   pendingMs: 0,
   pendingComponent: () => (
-    <div className="grid min-h-[60vh] place-items-center">
-      <span
-        aria-label="Carregando produtos"
-        className="size-9 animate-spin rounded-full border-4 border-muted-foreground/25 border-t-primary"
-      />
+    <div className="grid min-h-screen place-items-center bg-background">
+      <div className="flex items-center gap-3">
+        <span
+          aria-label="Carregando produtos"
+          className="size-8 animate-spin rounded-full border-4 border-muted-foreground/25 border-t-primary"
+        />
+        <p className="text-sm text-muted-foreground">Carregando produtos, por favor aguarde</p>
+      </div>
     </div>
+  ),
+  errorComponent: () => (
+    <div className="grid min-h-screen place-items-center bg-background px-6 text-center">
+      <div>
+        <p className="font-semibold text-foreground">Não foi possível carregar os produtos.</p>
+        <a href="/" className="mt-4 inline-block text-sm font-bold text-primary underline">Tentar novamente</a>
+      </div>
+    </div>
+  ),
+  notFoundComponent: () => (
+    <div className="grid min-h-screen place-items-center bg-background text-foreground">Página não encontrada.</div>
   ),
   component: Index,
 });
@@ -66,62 +74,12 @@ const brl = (v: number) => Number(v).toLocaleString("pt-BR", { style: "currency"
 
 function Index() {
   const itens = useCart().items;
-  const {
-    data,
-    isPending: produtosCarregando,
-    hasNextPage,
-    isFetchingNextPage,
-    fetchNextPage,
-  } = useInfiniteQuery(produtosQuery);
-  const produtos = data?.pages.flat() ?? [];
+  const { data: produtos } = useSuspenseQuery(produtosQuery);
   const { data: settings } = useSuspenseQuery(settingsQuery);
   const hero = (settings as any)?.hero_image_url as string | undefined;
-  const [entradaConcluida, setEntradaConcluida] = useState(false);
-  const [proximoDoFim, setProximoDoFim] = useState(false);
-  const sentinelaRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (produtosCarregando) return;
-    const timer = window.setTimeout(() => setEntradaConcluida(true), 500);
-    return () => window.clearTimeout(timer);
-  }, [produtosCarregando]);
-
-  useEffect(() => {
-    const sentinela = sentinelaRef.current;
-    if (!sentinela) return;
-
-    const observer = new IntersectionObserver(
-      ([entrada]) => setProximoDoFim(Boolean(entrada?.isIntersecting)),
-      { rootMargin: "240px 0px" },
-    );
-    observer.observe(sentinela);
-    return () => observer.disconnect();
-  }, [entradaConcluida]);
-
-  useEffect(() => {
-    if (!proximoDoFim || !hasNextPage || isFetchingNextPage) return;
-    const timer = window.setTimeout(() => {
-      void fetchNextPage();
-    }, 2000);
-    return () => window.clearTimeout(timer);
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage, proximoDoFim]);
 
   function irParaProdutos() {
     document.getElementById("produtos")?.scrollIntoView({ behavior: "smooth" });
-  }
-
-  if (!entradaConcluida) {
-    return (
-      <div className="grid min-h-screen place-items-center bg-background">
-        <div className="flex items-center gap-3">
-          <span
-            aria-label="Carregando produtos"
-            className="size-8 animate-spin rounded-full border-4 border-muted-foreground/25 border-t-primary"
-          />
-          <p className="text-sm text-muted-foreground">Carregando produtos, por favor aguarde</p>
-        </div>
-      </div>
-    );
   }
 
   return (
@@ -181,27 +139,8 @@ function Index() {
               );
             })}
           </div>
-          {hasNextPage && (
-            <div ref={sentinelaRef} className="flex min-h-20 items-center justify-center gap-2 py-6">
-              {(proximoDoFim || isFetchingNextPage) && (
-                <>
-                  <span
-                    aria-label="Carregando mais produtos"
-                    className="size-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary"
-                  />
-                  <p className="text-sm text-muted-foreground">Carregando mais produtos</p>
-                </>
-              )}
-            </div>
-          )}
           {produtos.length === 0 && (
-            <div className="flex items-center justify-center gap-2 py-8">
-              <span
-                aria-label="Carregando"
-                className="size-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary"
-              />
-              <p className="text-sm text-muted-foreground">Carregando produtos, por favor aguarde</p>
-            </div>
+            <p className="py-8 text-center text-sm text-muted-foreground">Nenhum produto cadastrado ainda.</p>
           )}
         </main>
         <StoreFooter />
