@@ -36,6 +36,14 @@ export const Route = createFileRoute("/")({
       { name: "twitter:image", content: "https://megashoppingribeirao.shop/__l5e/assets-v1/facd7641-e4ec-4823-a137-10a0de2f40e6/og-compartilhar.png" },
     ],
   }),
+  pendingComponent: () => (
+    <div className="grid min-h-[60vh] place-items-center">
+      <span
+        aria-label="Carregando produtos"
+        className="size-9 animate-spin rounded-full border-4 border-muted-foreground/25 border-t-primary"
+      />
+    </div>
+  ),
   component: Index,
 });
 
