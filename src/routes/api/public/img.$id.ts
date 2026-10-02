@@ -7,7 +7,10 @@ export const Route = createFileRoute("/api/public/img/$id")({
     handlers: {
       GET: async ({ params }) => {
         if (!/^[0-9a-f-]{36}$/i.test(params.id)) return new Response("Bad id", { status: 400 });
-        const sb = createClient(process.env.SUPABASE_URL ?? import.meta.env.VITE_SUPABASE_URL, process.env.SUPABASE_PUBLISHABLE_KEY ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: false } });
+        const env = import.meta.env as Record<string, string | undefined>;
+        const url = process.env["SUPABASE_URL"] ?? env["VITE_SUPABASE_URL"] ?? "";
+        const key = process.env["SUPABASE_PUBLISHABLE_KEY"] ?? env["VITE_SUPABASE_PUBLISHABLE_KEY"] ?? "";
+        const sb = createClient(url, key, { auth: { persistSession: false } });
         const { data } = await sb.from("products").select("image_url").eq("id", params.id).maybeSingle();
         const src = data?.image_url;
         if (!src) return new Response("Not found", { status: 404 });
