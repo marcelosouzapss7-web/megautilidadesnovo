@@ -8,7 +8,7 @@ import { cart, useCart } from "@/lib/cart";
 
 const produtosQuery = queryOptions({
   queryKey: ["products"],
-  queryFn: async () => (await supabase.from("products").select("*").order("position", { ascending: true }).order("created_at", { ascending: false })).data ?? [],
+  queryFn: async () => (await supabase.from("products").select("id,name,price,old_price,has_sizes,position,created_at,image_url:id").order("position", { ascending: true }).order("created_at", { ascending: false })).data ?? [],
 });
 
 const settingsQuery = queryOptions({
@@ -87,13 +87,13 @@ function Index() {
           </h1>
           <div className="grid grid-cols-2 gap-3">
             {produtos.map((p, idx) => {
-              const k = itens.findIndex((i) => i.id === p.id && i.size === null && i.image === (p.image_url ?? null));
+              const k = itens.findIndex((i) => i.id === p.id && i.size === null && i.image === ((p.image_url ? `/api/public/img/${p.id}` : null)));
               const q = itens[k]?.qty ?? 0;
               return (
               <div key={p.id}>
               <Link to="/produto/$id" params={{ id: p.id }} className="block">
                 {p.image_url ? (
-                  <img src={p.image_url} alt={p.name} loading={idx < 4 ? "eager" : "lazy"} fetchPriority={idx < 2 ? "high" : "auto"} className="aspect-[3/4] w-full object-cover" />
+                  <img src={`/api/public/img/${p.id}`} alt={p.name} loading={idx < 4 ? "eager" : "lazy"} fetchPriority={idx < 2 ? "high" : "auto"} className="aspect-[3/4] w-full object-cover" />
                 ) : (
                   <div className="aspect-[3/4] w-full bg-muted" />
                 )}
@@ -101,7 +101,7 @@ function Index() {
                 <p className="mt-1 text-base font-bold text-primary">{brl(p.price)}</p>
               </Link>
               {q === 0 ? (
-                <button onClick={() => cart.add({ id: p.id, name: p.name, price: Number(p.price), image: p.image_url ?? null, size: null })}
+                <button onClick={() => cart.add({ id: p.id, name: p.name, price: Number(p.price), image: (p.image_url ? `/api/public/img/${p.id}` : null), size: null })}
                   className="mt-2 flex w-full items-center justify-center gap-2 rounded bg-header py-2 text-xs font-bold text-header-foreground">
                   <ShoppingCart className="size-4" /> ADICIONAR
                 </button>
