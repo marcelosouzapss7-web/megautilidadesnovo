@@ -80,11 +80,14 @@ function Login() {
     e.preventDefault();
     if (password.length < 6) return void toast.error("A senha precisa ter pelo menos 6 caracteres");
     setLoading(true);
+    const emailNormalizado = email.trim().replace(/\s+/g, "").toLowerCase();
     const { error } = firstAccess
-      ? await supabase.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin + "/admin" } })
-      : await supabase.auth.signInWithPassword({ email, password });
+      ? await supabase.auth.signUp({ email: emailNormalizado, password, options: { emailRedirectTo: window.location.origin + "/admin" } })
+      : await supabase.auth.signInWithPassword({ email: emailNormalizado, password });
     setLoading(false);
-    if (error) toast.error(firstAccess ? error.message : "E-mail ou senha incorretos");
+    if (error) {
+      toast.error(firstAccess ? error.message : "Não foi possível entrar. Confira o e-mail e a senha.");
+    }
   }
 
   return (
@@ -96,11 +99,11 @@ function Login() {
         </p>
         <div className="space-y-2">
           <Label htmlFor="email">E-mail</Label>
-          <Input id="email" type="email" required maxLength={255} value={email} onChange={(e) => setEmail(e.target.value)} />
+          <Input id="email" type="email" autoComplete="email" required maxLength={255} value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="senha">Senha</Label>
-          <Input id="senha" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+          <Input id="senha" type="password" autoComplete="current-password" required minLength={6} maxLength={72} value={password} onChange={(e) => setPassword(e.target.value)} />
         </div>
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Aguarde…" : firstAccess ? "Criar acesso e entrar" : "Entrar"}
