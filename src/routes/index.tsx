@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { StoreHeader } from "@/components/StoreHeader";
 import { StoreFooter } from "@/components/StoreFooter";
-import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { infiniteQueryOptions, queryOptions, useInfiniteQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ShoppingCart, Plus, Minus } from "lucide-react";
 import { cart, useCart } from "@/lib/cart";
@@ -9,9 +9,21 @@ import { useEffect, useRef, useState } from "react";
 
 const PRODUTOS_POR_ETAPA = 10;
 
-const produtosQuery = queryOptions({
+const produtosQuery = infiniteQueryOptions({
   queryKey: ["products"],
-  queryFn: async () => (await supabase.from("products").select("id,name,price,old_price,has_sizes,position,created_at,image_url:id").order("position", { ascending: true }).order("created_at", { ascending: false })).data ?? [],
+  initialPageParam: 0,
+  queryFn: async ({ pageParam }) => {
+    const inicio = pageParam * PRODUTOS_POR_ETAPA;
+    const { data } = await supabase
+      .from("products")
+      .select("id,name,price,old_price,has_sizes,position,created_at,image_url:id")
+      .order("position", { ascending: true })
+      .order("created_at", { ascending: false })
+      .range(inicio, inicio + PRODUTOS_POR_ETAPA - 1);
+    return data ?? [];
+  },
+  getNextPageParam: (ultimaPagina, paginas) =>
+    ultimaPagina.length === PRODUTOS_POR_ETAPA ? paginas.length : undefined,
 });
 
 const settingsQuery = queryOptions({
@@ -21,7 +33,7 @@ const settingsQuery = queryOptions({
 
 export const Route = createFileRoute("/")({
   loader: ({ context }) => {
-    context.queryClient.prefetchQuery(produtosQuery);
+    context.queryClient.prefetchInfiniteQuery(produtosQuery);
     return context.queryClient.ensureQueryData(settingsQuery);
   },
   head: () => ({
@@ -54,11 +66,17 @@ const brl = (v: number) => Number(v).toLocaleString("pt-BR", { style: "currency"
 
 function Index() {
   const itens = useCart().items;
-  const { data: produtos = [], isPending: produtosCarregando } = useQuery(produtosQuery);
+  const {
+    data,
+    isPending: produtosCarregando,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useInfiniteQuery(produtosQuery);
+  const produtos = data?.pages.flat() ?? [];
   const { data: settings } = useSuspenseQuery(settingsQuery);
   const hero = (settings as any)?.hero_image_url as string | undefined;
   const [entradaConcluida, setEntradaConcluida] = useState(false);
-  const [quantidadeVisivel, setQuantidadeVisivel] = useState(PRODUTOS_POR_ETAPA);
   const [proximoDoFim, setProximoDoFim] = useState(false);
   const sentinelaRef = useRef<HTMLDivElement>(null);
 
@@ -81,12 +99,12 @@ function Index() {
   }, [entradaConcluida]);
 
   useEffect(() => {
-    if (!proximoDoFim || quantidadeVisivel >= produtos.length) return;
+    if (!proximoDoFim || !hasNextPage || isFetchingNextPage) return;
     const timer = window.setTimeout(() => {
-      setQuantidadeVisivel((atual) => Math.min(atual + PRODUTOS_POR_ETAPA, produtos.length));
+      void fetchNextPage();
     }, 2000);
     return () => window.clearTimeout(timer);
-  }, [proximoDoFim, quantidadeVisivel, produtos.length]);
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, proximoDoFim]);
 
   function irParaProdutos() {
     document.getElementById("produtos")?.scrollIntoView({ behavior: "smooth" });
@@ -133,7 +151,7 @@ function Index() {
             NOSSOS PRODUTOS
           </h1>
           <div className="grid grid-cols-2 gap-3">
-            {produtos.slice(0, quantidadeVisivel).map((p, idx) => {
+            {produtos.map((p, idx) => {
               const k = itens.findIndex((i) => i.id === p.id && i.size === null && i.image === ((p.image_url ? `/api/public/img/${p.id}` : null)));
               const q = itens[k]?.qty ?? 0;
               return (
@@ -163,9 +181,9 @@ function Index() {
               );
             })}
           </div>
-          {quantidadeVisivel < produtos.length && (
+          {hasNextPage && (
             <div ref={sentinelaRef} className="flex min-h-20 items-center justify-center gap-2 py-6">
-              {proximoDoFim && (
+              {(proximoDoFim || isFetchingNextPage) && (
                 <>
                   <span
                     aria-label="Carregando mais produtos"
