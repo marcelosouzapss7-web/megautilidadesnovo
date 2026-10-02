@@ -1,13 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { StoreHeader } from "@/components/StoreHeader";
 import { StoreFooter } from "@/components/StoreFooter";
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ShoppingCart, Plus, Minus } from "lucide-react";
 import { cart, useCart } from "@/lib/cart";
 
 const produtosQuery = queryOptions({
   queryKey: ["products"],
+  retry: 1,
   queryFn: async () => {
     const { data, error } = await supabase
       .from("products")
@@ -21,16 +22,12 @@ const produtosQuery = queryOptions({
 
 const settingsQuery = queryOptions({
   queryKey: ["site_settings"],
+  retry: 1,
   queryFn: async () => (await supabase.from("site_settings").select("*").eq("id", 1).maybeSingle()).data,
 });
 
 export const Route = createFileRoute("/")({
   ssr: false,
-  loader: ({ context }) =>
-    Promise.all([
-      context.queryClient.ensureQueryData(produtosQuery),
-      context.queryClient.ensureQueryData(settingsQuery),
-    ]),
   head: () => ({
     meta: [
       { title: "MEGA SHOPPING — Nossos Produtos" },
@@ -75,12 +72,39 @@ const brl = (v: number) => Number(v).toLocaleString("pt-BR", { style: "currency"
 
 function Index() {
   const itens = useCart().items;
-  const { data: produtos } = useSuspenseQuery(produtosQuery);
-  const { data: settings } = useSuspenseQuery(settingsQuery);
+  const { data: produtos = [], isPending, isError, refetch } = useQuery(produtosQuery);
+  const { data: settings } = useQuery(settingsQuery);
   const hero = (settings as any)?.hero_image_url as string | undefined;
 
   function irParaProdutos() {
     document.getElementById("produtos")?.scrollIntoView({ behavior: "smooth" });
+  }
+
+  if (isPending) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-background">
+        <div className="flex items-center gap-3">
+          <span
+            aria-label="Carregando produtos"
+            className="size-8 animate-spin rounded-full border-4 border-muted-foreground/25 border-t-primary"
+          />
+          <p className="text-sm text-muted-foreground">Carregando produtos, por favor aguarde</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-background px-6 text-center">
+        <div>
+          <p className="font-semibold text-foreground">Não foi possível carregar os produtos.</p>
+          <button onClick={() => void refetch()} className="mt-4 text-sm font-bold text-primary underline">
+            Tentar novamente
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
