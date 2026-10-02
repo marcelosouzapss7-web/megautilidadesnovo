@@ -5,6 +5,9 @@ import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query"
 import { supabase } from "@/integrations/supabase/client";
 import { ShoppingCart, Plus, Minus } from "lucide-react";
 import { cart, useCart } from "@/lib/cart";
+import { useEffect, useRef, useState } from "react";
+
+const PRODUTOS_POR_ETAPA = 10;
 
 const produtosQuery = queryOptions({
   queryKey: ["products"],
@@ -51,12 +54,56 @@ const brl = (v: number) => Number(v).toLocaleString("pt-BR", { style: "currency"
 
 function Index() {
   const itens = useCart().items;
-  const { data: produtos = [] } = useQuery(produtosQuery);
+  const { data: produtos = [], isPending: produtosCarregando } = useQuery(produtosQuery);
   const { data: settings } = useSuspenseQuery(settingsQuery);
   const hero = (settings as any)?.hero_image_url as string | undefined;
+  const [entradaConcluida, setEntradaConcluida] = useState(false);
+  const [quantidadeVisivel, setQuantidadeVisivel] = useState(PRODUTOS_POR_ETAPA);
+  const [proximoDoFim, setProximoDoFim] = useState(false);
+  const sentinelaRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (produtosCarregando) return;
+    const timer = window.setTimeout(() => setEntradaConcluida(true), 500);
+    return () => window.clearTimeout(timer);
+  }, [produtosCarregando]);
+
+  useEffect(() => {
+    const sentinela = sentinelaRef.current;
+    if (!sentinela) return;
+
+    const observer = new IntersectionObserver(
+      ([entrada]) => setProximoDoFim(Boolean(entrada?.isIntersecting)),
+      { rootMargin: "240px 0px" },
+    );
+    observer.observe(sentinela);
+    return () => observer.disconnect();
+  }, [entradaConcluida]);
+
+  useEffect(() => {
+    if (!proximoDoFim || quantidadeVisivel >= produtos.length) return;
+    const timer = window.setTimeout(() => {
+      setQuantidadeVisivel((atual) => Math.min(atual + PRODUTOS_POR_ETAPA, produtos.length));
+    }, 2000);
+    return () => window.clearTimeout(timer);
+  }, [proximoDoFim, quantidadeVisivel, produtos.length]);
 
   function irParaProdutos() {
     document.getElementById("produtos")?.scrollIntoView({ behavior: "smooth" });
+  }
+
+  if (!entradaConcluida) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-background">
+        <div className="flex items-center gap-3">
+          <span
+            aria-label="Carregando produtos"
+            className="size-8 animate-spin rounded-full border-4 border-muted-foreground/25 border-t-primary"
+          />
+          <p className="text-sm text-muted-foreground">Carregando produtos, por favor aguarde</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -86,7 +133,7 @@ function Index() {
             NOSSOS PRODUTOS
           </h1>
           <div className="grid grid-cols-2 gap-3">
-            {produtos.map((p, idx) => {
+            {produtos.slice(0, quantidadeVisivel).map((p, idx) => {
               const k = itens.findIndex((i) => i.id === p.id && i.size === null && i.image === ((p.image_url ? `/api/public/img/${p.id}` : null)));
               const q = itens[k]?.qty ?? 0;
               return (
@@ -116,6 +163,19 @@ function Index() {
               );
             })}
           </div>
+          {quantidadeVisivel < produtos.length && (
+            <div ref={sentinelaRef} className="flex min-h-20 items-center justify-center gap-2 py-6">
+              {proximoDoFim && (
+                <>
+                  <span
+                    aria-label="Carregando mais produtos"
+                    className="size-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary"
+                  />
+                  <p className="text-sm text-muted-foreground">Carregando mais produtos</p>
+                </>
+              )}
+            </div>
+          )}
           {produtos.length === 0 && (
             <div className="flex items-center justify-center gap-2 py-8">
               <span
