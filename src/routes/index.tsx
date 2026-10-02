@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { StoreHeader } from "@/components/StoreHeader";
 import { StoreFooter } from "@/components/StoreFooter";
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ShoppingCart, Plus, Minus } from "lucide-react";
 import { cart, useCart } from "@/lib/cart";
@@ -17,11 +17,10 @@ const settingsQuery = queryOptions({
 });
 
 export const Route = createFileRoute("/")({
-  loader: ({ context }) =>
-    Promise.all([
-      context.queryClient.ensureQueryData(produtosQuery),
-      context.queryClient.ensureQueryData(settingsQuery),
-    ]),
+  loader: ({ context }) => {
+    context.queryClient.prefetchQuery(produtosQuery);
+    return context.queryClient.ensureQueryData(settingsQuery);
+  },
   head: () => ({
     meta: [
       { title: "MEGA SHOPPING — Nossos Produtos" },
@@ -36,6 +35,7 @@ export const Route = createFileRoute("/")({
       { name: "twitter:image", content: "https://megashoppingribeirao.shop/__l5e/assets-v1/facd7641-e4ec-4823-a137-10a0de2f40e6/og-compartilhar.png" },
     ],
   }),
+  pendingMs: 0,
   pendingComponent: () => (
     <div className="grid min-h-[60vh] place-items-center">
       <span
@@ -51,7 +51,7 @@ const brl = (v: number) => Number(v).toLocaleString("pt-BR", { style: "currency"
 
 function Index() {
   const itens = useCart().items;
-  const { data: produtos } = useSuspenseQuery(produtosQuery);
+  const { data: produtos = [] } = useQuery(produtosQuery);
   const { data: settings } = useSuspenseQuery(settingsQuery);
   const hero = (settings as any)?.hero_image_url as string | undefined;
 
