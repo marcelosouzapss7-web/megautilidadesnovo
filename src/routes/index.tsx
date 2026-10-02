@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ShoppingCart, Plus, Minus } from "lucide-react";
 import { cart, useCart } from "@/lib/cart";
 
-const produtosQuery = queryOptions({
+export const produtosQuery = queryOptions({
   queryKey: ["products"],
   retry: 1,
   queryFn: async () => {
@@ -20,7 +20,7 @@ const produtosQuery = queryOptions({
   },
 });
 
-const settingsQuery = queryOptions({
+export const settingsQuery = queryOptions({
   queryKey: ["site_settings"],
   retry: 1,
   queryFn: async () => (await supabase.from("site_settings").select("*").eq("id", 1).maybeSingle()).data,
