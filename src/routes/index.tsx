@@ -8,7 +8,7 @@ import { cart, useCart } from "@/lib/cart";
 
 const produtosQuery = queryOptions({
   queryKey: ["products"],
-  queryFn: async () => (await supabase.from("products").select("id,name,price,image_url").order("position", { ascending: true }).order("created_at", { ascending: false })).data ?? [],
+  queryFn: async () => (await supabase.from("products").select("*").order("position", { ascending: true }).order("created_at", { ascending: false })).data ?? [],
 });
 
 const settingsQuery = queryOptions({
