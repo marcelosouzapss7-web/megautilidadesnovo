@@ -18,7 +18,7 @@ export const Route = createFileRoute("/api/public/img/$id")({
         if (!m) return Response.redirect(src, 302);
         const bin = Uint8Array.from(atob(m[2]!), (c) => c.charCodeAt(0));
         return new Response(bin, {
-          headers: { "Content-Type": m[1]!, "Cache-Control": "public, max-age=600, stale-while-revalidate=86400" },
+          headers: { "Content-Type": m[1]!, "Cache-Control": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800" },
         });
       },
     },
