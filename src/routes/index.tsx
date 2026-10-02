@@ -25,6 +25,7 @@ const settingsQuery = queryOptions({
 });
 
 export const Route = createFileRoute("/")({
+  ssr: false,
   loader: ({ context }) =>
     Promise.all([
       context.queryClient.ensureQueryData(produtosQuery),
