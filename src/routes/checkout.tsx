@@ -94,9 +94,14 @@ function Checkout() {
     } catch { setCepErro("Não foi possível consultar o CEP."); }
   };
 
-  const fretes = [
+  const cepDig = cep.replace(/\D/g, "");
+  const rp = cepDig.length === 8 && Number(cepDig.slice(0, 5)) >= 14000 && Number(cepDig.slice(0, 5)) <= 14119;
+  const fretes = rp ? [
     { n: "Sedex", p: "Em até 1 dia útil", v: 12 },
     { n: "Motoboy", p: "Entrega em até 40 minutos", v: 7 },
+  ] : [
+    { n: "Sedex", p: "Em até 1 dia útil", v: 17.9 },
+    { n: "Motoboy", p: "Entrega em até 40 minutos", v: 19.9 },
   ];
 
   const [pag, setPag] = useState(false);

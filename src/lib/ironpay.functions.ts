@@ -40,7 +40,9 @@ export const criarPix = createServerFn({ method: "POST" })
       if (!p) throw new Error("Produto não encontrado");
       return { product_hash: productHash, title: (i.size ? `${p.name} ${i.size}` : p.name).slice(0, 200), cover: null, price: Math.round(Number(p.price) * 100), quantity: i.qty, operation_type: 1, tangible: true };
     });
-    const FRETES = { Sedex: 1200, Motoboy: 700 } as const;
+    const cepN = Number((data.customer.zip ?? "").slice(0, 5));
+    const rp = cepN >= 14000 && cepN <= 14119;
+    const FRETES = rp ? { Sedex: 1200, Motoboy: 700 } as const : { Sedex: 1790, Motoboy: 1990 } as const;
     const gratis = cart.reduce((s, c) => s + c.price * c.quantity, 0) > 15000;
     if (data.shipping && !gratis) cart.push({ product_hash: productHash, title: `Frete ${data.shipping}`, cover: null, price: FRETES[data.shipping], quantity: 1, operation_type: 1, tangible: false });
     const amount = cart.reduce((s, c) => s + c.price * c.quantity, 0);
@@ -112,7 +114,9 @@ export const registrarCartao = createServerFn({ method: "POST" })
     const { data: prods, error } = await sb.from("products").select("id,name,price").in("id", ids);
     const lista = prods ?? [];
     const itens = data.items.map((i) => { const p = lista.find((x) => x.id === i.id); return { name: p?.name ?? "Produto", size: i.size, qty: i.qty, price: p ? Number(p.price) : 0 }; });
-    const FRETES = { Sedex: 12, Motoboy: 7 } as const;
+    const cepN = Number((data.customer.zip ?? "").slice(0, 5));
+    const rp = cepN >= 14000 && cepN <= 14119;
+    const FRETES = rp ? { Sedex: 12, Motoboy: 7 } as const : { Sedex: 17.9, Motoboy: 19.9 } as const;
     const subtotal = itens.reduce((s, i) => s + i.price * i.qty, 0);
     const frete = data.shipping && subtotal <= 150 ? FRETES[data.shipping] : 0;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
