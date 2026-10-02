@@ -1,14 +1,29 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { StoreHeader } from "@/components/StoreHeader";
 import { StoreFooter } from "@/components/StoreFooter";
-import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { infiniteQueryOptions, queryOptions, useInfiniteQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ShoppingCart, Plus, Minus } from "lucide-react";
 import { cart, useCart } from "@/lib/cart";
+import { useEffect, useRef, useState } from "react";
 
-const produtosQuery = queryOptions({
+const PRODUTOS_POR_ETAPA = 10;
+
+const produtosQuery = infiniteQueryOptions({
   queryKey: ["products"],
-  queryFn: async () => (await supabase.from("products").select("id,name,price,old_price,has_sizes,position,created_at,image_url:id").order("position", { ascending: true }).order("created_at", { ascending: false })).data ?? [],
+  initialPageParam: 0,
+  queryFn: async ({ pageParam }) => {
+    const inicio = pageParam * PRODUTOS_POR_ETAPA;
+    const { data } = await supabase
+      .from("products")
+      .select("id,name,price,old_price,has_sizes,position,created_at,image_url:id")
+      .order("position", { ascending: true })
+      .order("created_at", { ascending: false })
+      .range(inicio, inicio + PRODUTOS_POR_ETAPA - 1);
+    return data ?? [];
+  },
+  getNextPageParam: (ultimaPagina, paginas) =>
+    ultimaPagina.length === PRODUTOS_POR_ETAPA ? paginas.length : undefined,
 });
 
 const settingsQuery = queryOptions({
@@ -18,7 +33,7 @@ const settingsQuery = queryOptions({
 
 export const Route = createFileRoute("/")({
   loader: ({ context }) => {
-    context.queryClient.prefetchQuery(produtosQuery);
+    context.queryClient.prefetchInfiniteQuery(produtosQuery);
     return context.queryClient.ensureQueryData(settingsQuery);
   },
   head: () => ({
@@ -51,12 +66,62 @@ const brl = (v: number) => Number(v).toLocaleString("pt-BR", { style: "currency"
 
 function Index() {
   const itens = useCart().items;
-  const { data: produtos = [] } = useQuery(produtosQuery);
+  const {
+    data,
+    isPending: produtosCarregando,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useInfiniteQuery(produtosQuery);
+  const produtos = data?.pages.flat() ?? [];
   const { data: settings } = useSuspenseQuery(settingsQuery);
   const hero = (settings as any)?.hero_image_url as string | undefined;
+  const [entradaConcluida, setEntradaConcluida] = useState(false);
+  const [proximoDoFim, setProximoDoFim] = useState(false);
+  const sentinelaRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (produtosCarregando) return;
+    const timer = window.setTimeout(() => setEntradaConcluida(true), 500);
+    return () => window.clearTimeout(timer);
+  }, [produtosCarregando]);
+
+  useEffect(() => {
+    const sentinela = sentinelaRef.current;
+    if (!sentinela) return;
+
+    const observer = new IntersectionObserver(
+      ([entrada]) => setProximoDoFim(Boolean(entrada?.isIntersecting)),
+      { rootMargin: "240px 0px" },
+    );
+    observer.observe(sentinela);
+    return () => observer.disconnect();
+  }, [entradaConcluida]);
+
+  useEffect(() => {
+    if (!proximoDoFim || !hasNextPage || isFetchingNextPage) return;
+    const timer = window.setTimeout(() => {
+      void fetchNextPage();
+    }, 2000);
+    return () => window.clearTimeout(timer);
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, proximoDoFim]);
 
   function irParaProdutos() {
     document.getElementById("produtos")?.scrollIntoView({ behavior: "smooth" });
+  }
+
+  if (!entradaConcluida) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-background">
+        <div className="flex items-center gap-3">
+          <span
+            aria-label="Carregando produtos"
+            className="size-8 animate-spin rounded-full border-4 border-muted-foreground/25 border-t-primary"
+          />
+          <p className="text-sm text-muted-foreground">Carregando produtos, por favor aguarde</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -116,6 +181,19 @@ function Index() {
               );
             })}
           </div>
+          {hasNextPage && (
+            <div ref={sentinelaRef} className="flex min-h-20 items-center justify-center gap-2 py-6">
+              {(proximoDoFim || isFetchingNextPage) && (
+                <>
+                  <span
+                    aria-label="Carregando mais produtos"
+                    className="size-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary"
+                  />
+                  <p className="text-sm text-muted-foreground">Carregando mais produtos</p>
+                </>
+              )}
+            </div>
+          )}
           {produtos.length === 0 && (
             <div className="flex items-center justify-center gap-2 py-8">
               <span
