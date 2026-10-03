@@ -364,6 +364,54 @@ function formatBRL(v: number) {
   return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+function Contato() {
+  const [email, setEmail] = useState("");
+  const [nome, setNome] = useState("");
+  const [enviando, setEnviando] = useState<string | null>(null);
+
+  async function enviar(tipo: "aprovado" | "cancelado" | "analise") {
+    const dest = email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(dest)) return void toast.error("Digite um e-mail válido");
+    setEnviando(tipo);
+    try {
+      const r = await enviarEmailStatus({ data: { email: dest, tipo, nome: nome.trim() || undefined } });
+      if (r.sent) toast.success("E-mail enviado ao cliente");
+      else toast.error("Este cliente optou por não receber e-mails da loja");
+    } catch (e: any) {
+      toast.error(e?.message?.includes("domain_not_verified") ? "O domínio de e-mail ainda está em verificação. Tente novamente em breve." : "Não foi possível enviar o e-mail");
+    }
+    setEnviando(null);
+  }
+
+  const botao = (tipo: "aprovado" | "cancelado" | "analise", label: string, className: string) => (
+    <Button key={tipo} onClick={() => enviar(tipo)} disabled={enviando !== null} className={className}>
+      {enviando === tipo ? "Enviando…" : label}
+    </Button>
+  );
+
+  return (
+    <div className="max-w-xl space-y-6">
+      <h1 className="text-2xl font-extrabold">Contato</h1>
+      <div className="space-y-4 rounded-xl bg-background p-4 shadow-sm">
+        <p className="text-sm text-muted-foreground">Envie um e-mail profissional da MEGA SHOPPING informando a situação do pagamento do cliente.</p>
+        <div className="space-y-2">
+          <Label htmlFor="contato-email">E-mail do cliente</Label>
+          <Input id="contato-email" type="email" required maxLength={255} placeholder="cliente@email.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="contato-nome">Nome do cliente (opcional)</Label>
+          <Input id="contato-nome" maxLength={100} placeholder="Nome" value={nome} onChange={(e) => setNome(e.target.value)} />
+        </div>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          {botao("aprovado", "Aprovado", "bg-green-600 text-white hover:bg-green-700")}
+          {botao("cancelado", "Cancelado", "bg-red-600 text-white hover:bg-red-700")}
+          {botao("analise", "Em análise", "bg-amber-500 text-white hover:bg-amber-600")}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Pedidos() {
   const qc = useQueryClient();
   const { data: pedidos = [], isLoading } = useQuery({
