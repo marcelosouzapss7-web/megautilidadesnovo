@@ -9,7 +9,7 @@ interface Props {
 const Email = ({ nome }: Props) => (
   <Html lang="pt-BR" dir="ltr">
     <Head />
-    <Preview>Pagamento em análise — MEGA SHOPPING</Preview>
+    <Preview>Seu pedido está em análise — finalize o pagamento na loja</Preview>
     <Body style={main}>
       <Container style={container}>
         <Section style={header}>
