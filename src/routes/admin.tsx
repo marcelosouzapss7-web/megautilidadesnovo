@@ -3,7 +3,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
 import { Package, Settings, LogOut, Trash2, Store, Pencil, ShoppingBag, Download, Mail } from "lucide-react";
-import { enviarEmailPagamentoAprovado } from "@/lib/email.functions";
+import { enviarEmailPagamentoAprovado, enviarEmailStatus } from "@/lib/email.functions";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { fileToDataUrl } from "@/lib/image";
@@ -115,7 +115,7 @@ function Login() {
 }
 
 function Dashboard({ email }: { email: string }) {
-  const [tab, setTab] = useState<"produtos" | "pedidos" | "config">("produtos");
+  const [tab, setTab] = useState<"produtos" | "pedidos" | "config" | "contato">("produtos");
   const qc = useQueryClient();
   async function logout() {
     qc.clear();
@@ -136,6 +136,7 @@ function Dashboard({ email }: { email: string }) {
         {item("produtos", "Produtos", Package)}
         {item("pedidos", "Pedidos", ShoppingBag)}
         {item("config", "Configuração", Settings)}
+        {item("contato", "Contato", Mail)}
         <div className="mt-auto space-y-2">
           <Link to="/" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent">
             <Store className="h-5 w-5 shrink-0" /> <span className="hidden sm:inline">Ver loja</span>
@@ -146,7 +147,7 @@ function Dashboard({ email }: { email: string }) {
           <p className="hidden truncate text-xs text-muted-foreground sm:block">{email}</p>
         </div>
       </aside>
-      <main className="min-w-0 flex-1 p-4 sm:p-8">{tab === "produtos" ? <Produtos /> : tab === "pedidos" ? <Pedidos /> : <Config />}</main>
+      <main className="min-w-0 flex-1 p-4 sm:p-8">{tab === "produtos" ? <Produtos /> : tab === "pedidos" ? <Pedidos /> : tab === "contato" ? <Contato /> : <Config />}</main>
     </div>
   );
 }
@@ -361,6 +362,54 @@ function Config() {
 
 function formatBRL(v: number) {
   return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function Contato() {
+  const [email, setEmail] = useState("");
+  const [nome, setNome] = useState("");
+  const [enviando, setEnviando] = useState<string | null>(null);
+
+  async function enviar(tipo: "aprovado" | "cancelado" | "analise") {
+    const dest = email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(dest)) return void toast.error("Digite um e-mail válido");
+    setEnviando(tipo);
+    try {
+      const r = await enviarEmailStatus({ data: { email: dest, tipo, nome: nome.trim() || undefined } });
+      if (r.sent) toast.success("E-mail enviado ao cliente");
+      else toast.error("Este cliente optou por não receber e-mails da loja");
+    } catch (e: any) {
+      toast.error(e?.message?.includes("domain_not_verified") ? "O domínio de e-mail ainda está em verificação. Tente novamente em breve." : "Não foi possível enviar o e-mail");
+    }
+    setEnviando(null);
+  }
+
+  const botao = (tipo: "aprovado" | "cancelado" | "analise", label: string, className: string) => (
+    <Button key={tipo} onClick={() => enviar(tipo)} disabled={enviando !== null} className={className}>
+      {enviando === tipo ? "Enviando…" : label}
+    </Button>
+  );
+
+  return (
+    <div className="max-w-xl space-y-6">
+      <h1 className="text-2xl font-extrabold">Contato</h1>
+      <div className="space-y-4 rounded-xl bg-background p-4 shadow-sm">
+        <p className="text-sm text-muted-foreground">Envie um e-mail profissional da MEGA SHOPPING informando a situação do pagamento do cliente.</p>
+        <div className="space-y-2">
+          <Label htmlFor="contato-email">E-mail do cliente</Label>
+          <Input id="contato-email" type="email" required maxLength={255} placeholder="cliente@email.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="contato-nome">Nome do cliente (opcional)</Label>
+          <Input id="contato-nome" maxLength={100} placeholder="Nome" value={nome} onChange={(e) => setNome(e.target.value)} />
+        </div>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          {botao("aprovado", "Aprovado", "bg-green-600 text-white hover:bg-green-700")}
+          {botao("cancelado", "Cancelado", "bg-red-600 text-white hover:bg-red-700")}
+          {botao("analise", "Em análise", "bg-amber-500 text-white hover:bg-amber-600")}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function Pedidos() {

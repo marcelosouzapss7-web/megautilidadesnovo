@@ -34,3 +34,35 @@ export const enviarEmailPagamentoAprovado = createServerFn({ method: 'POST' })
     })
     return result
   })
+
+const STATUS_TEMPLATES = {
+  aprovado: 'pagamento-aprovado',
+  cancelado: 'pagamento-cancelado',
+  analise: 'pagamento-analise',
+} as const
+
+export const enviarEmailStatus = createServerFn({ method: 'POST' })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        email: z.string().trim().email().max(255),
+        tipo: z.enum(['aprovado', 'cancelado', 'analise']),
+        nome: z.string().trim().max(100).optional(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context as any
+
+    // Verifica se o chamador é admin
+    const { data: isAdmin } = await supabase.rpc('has_role', { _user_id: userId, _role: 'admin' })
+    if (!isAdmin) throw new Error('Acesso negado')
+
+    const { sendTemplateEmail } = await import('@/lib/email-templates/send-email')
+    const result = await sendTemplateEmail(STATUS_TEMPLATES[data.tipo], data.email, {
+      templateData: { nome: data.nome ?? '' },
+      idempotencyKey: `status-${data.tipo}-${data.email}-${Date.now()}`,
+    })
+    return result
+  })
