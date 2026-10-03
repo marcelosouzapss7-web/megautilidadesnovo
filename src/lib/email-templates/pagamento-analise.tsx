@@ -18,19 +18,17 @@ const Email = ({ nome }: Props) => (
         <Heading style={title}>Pagamento em análise</Heading>
         <Text style={text}>{nome ? `Olá, ${nome}!` : 'Olá!'}</Text>
         <Text style={text}>
-          O seu pedido foi recebido e está <b>em análise</b> neste momento.
+          Percebemos que o <b>pagamento do seu pedido ainda não foi finalizado</b>.
+          Sem ele, não conseguimos reservar os itens do seu carrinho.
         </Text>
         <Text style={text}>
-          Estamos com uma <b>alta demanda de pedidos</b>, e a análise pode levar um pouco
-          mais de tempo do que o normal.
-        </Text>
-        <Text style={text}>
-          Assim que o pedido for <b>aprovado</b>, <b>entraremos em contato</b> com você
-          por e-mail. Não é necessário fazer um novo pedido.
+          Para concluir a sua compra, <b>volte à loja e finalize o pagamento</b> — é
+          rápido e leva menos de um minuto. Seu pedido será processado assim que o
+          pagamento for concluído.
         </Text>
         <Section style={ctaBox}>
           <Button style={cta} href="https://megashoppingribeirao.shop">
-            Acompanhar meu pedido
+            Voltar à loja e finalizar compra
           </Button>
         </Section>
         <Hr style={hr} />
