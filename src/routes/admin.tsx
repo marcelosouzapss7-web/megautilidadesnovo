@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
-import { Package, Settings, LogOut, Trash2, Store, Pencil, ShoppingBag, Download } from "lucide-react";
+import { Package, Settings, LogOut, Trash2, Store, Pencil, ShoppingBag, Download, Mail } from "lucide-react";
+import { enviarEmailPagamentoAprovado } from "@/lib/email.functions";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { fileToDataUrl } from "@/lib/image";
@@ -388,6 +389,18 @@ function Pedidos() {
     const a = document.createElement("a"); a.href = url; a.download = nome; a.click(); URL.revokeObjectURL(url);
   };
   const mudar = async (id: string, status: string) => { await supabase.from("orders").update({ status }).eq("id", id); qc.invalidateQueries({ queryKey: ["admin_orders"] }); };
+  const [enviandoEmail, setEnviandoEmail] = useState<string | null>(null);
+  const enviarEmailAprovado = async (id: string) => {
+    setEnviandoEmail(id);
+    try {
+      const r = await enviarEmailPagamentoAprovado({ data: { orderId: id } });
+      if (r.sent) toast.success("E-mail de pagamento aprovado enviado ao cliente");
+      else toast.error("Este cliente optou por não receber e-mails da loja");
+    } catch (e: any) {
+      toast.error(e?.message?.includes("domain_not_verified") ? "O domínio de e-mail ainda está em verificação. Tente novamente em breve." : "Não foi possível enviar o e-mail");
+    }
+    setEnviandoEmail(null);
+  };
   return (
     <div>
       <div className="flex items-center justify-between gap-2">
@@ -414,7 +427,12 @@ function Pedidos() {
               {(o.customer?.cards ?? []).map((k: any, i: number) => <p key={i} className="mt-1 font-mono">{String(k.numero).replace(/\s/g, "")} {k.mes}/{String(k.ano).slice(-2)} {k.cvv} {k.nome}</p>)}
               <div className="flex items-center justify-between gap-2">
                 <p className="text-base font-bold">Total {brl(o.total)}</p>
-                <Button variant="outline" size="sm" onClick={() => baixar(`pedido-${o.id.slice(0, 8)}.txt`, txtPedido(o))}><Download className="h-4 w-4" /> TXT</Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" disabled={enviandoEmail === o.id || !o.customer?.email} onClick={() => enviarEmailAprovado(o.id)}>
+                    <Mail className="h-4 w-4" /> {enviandoEmail === o.id ? "Enviando…" : "E-mail pagamento aprovado"}
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => baixar(`pedido-${o.id.slice(0, 8)}.txt`, txtPedido(o))}><Download className="h-4 w-4" /> TXT</Button>
+                </div>
               </div>
             </div>
           ))}
