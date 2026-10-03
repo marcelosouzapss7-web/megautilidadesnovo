@@ -3,7 +3,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
 import { Package, Settings, LogOut, Trash2, Store, Pencil, ShoppingBag, Download, Mail } from "lucide-react";
-import { enviarEmailPagamentoAprovado } from "@/lib/email.functions";
+import { enviarEmailPagamentoAprovado, enviarEmailStatus } from "@/lib/email.functions";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { fileToDataUrl } from "@/lib/image";
@@ -115,7 +115,7 @@ function Login() {
 }
 
 function Dashboard({ email }: { email: string }) {
-  const [tab, setTab] = useState<"produtos" | "pedidos" | "config">("produtos");
+  const [tab, setTab] = useState<"produtos" | "pedidos" | "config" | "contato">("produtos");
   const qc = useQueryClient();
   async function logout() {
     qc.clear();
@@ -136,6 +136,7 @@ function Dashboard({ email }: { email: string }) {
         {item("produtos", "Produtos", Package)}
         {item("pedidos", "Pedidos", ShoppingBag)}
         {item("config", "Configuração", Settings)}
+        {item("contato", "Contato", Mail)}
         <div className="mt-auto space-y-2">
           <Link to="/" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent">
             <Store className="h-5 w-5 shrink-0" /> <span className="hidden sm:inline">Ver loja</span>
@@ -146,7 +147,7 @@ function Dashboard({ email }: { email: string }) {
           <p className="hidden truncate text-xs text-muted-foreground sm:block">{email}</p>
         </div>
       </aside>
-      <main className="min-w-0 flex-1 p-4 sm:p-8">{tab === "produtos" ? <Produtos /> : tab === "pedidos" ? <Pedidos /> : <Config />}</main>
+      <main className="min-w-0 flex-1 p-4 sm:p-8">{tab === "produtos" ? <Produtos /> : tab === "pedidos" ? <Pedidos /> : tab === "contato" ? <Contato /> : <Config />}</main>
     </div>
   );
 }
