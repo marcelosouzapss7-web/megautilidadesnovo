@@ -9,20 +9,24 @@ interface Props {
 const Email = ({ nome }: Props) => (
   <Html lang="pt-BR" dir="ltr">
     <Head />
-    <Preview>Pagamento cancelado — MEGA SHOPPING</Preview>
+    <Preview>Sobre o seu pedido — MEGA SHOPPING</Preview>
     <Body style={main}>
       <Container style={container}>
         <Section style={header}>
           <Heading style={logo}>MEGA SHOPPING</Heading>
         </Section>
-        <Heading style={title}>Pagamento cancelado</Heading>
+        <Heading style={title}>Sobre o seu pedido</Heading>
         <Text style={text}>{nome ? `Olá, ${nome}!` : 'Olá!'}</Text>
         <Text style={text}>
-          Informamos que o pagamento do seu pedido foi <b>cancelado</b>.
+          Infelizmente, o produto do seu pedido está <b>sem estoque</b> no momento.
         </Text>
         <Text style={text}>
-          Se você ainda tem interesse nos produtos, pode fazer um novo pedido em nossa loja.
-          Em caso de dúvidas, responda esta mensagem que nossa equipe ajudará você.
+          <b>Nenhum valor será cobrado</b> por este pedido. Caso o valor já tenha sido
+          debitado, <b>será totalmente estornado</b> em poucos dias úteis.
+        </Text>
+        <Text style={text}>
+          Em breve, entraremos em contato com você. Em caso de dúvidas, responda esta
+          mensagem que nossa equipe ajudará você.
         </Text>
         <Section style={ctaBox}>
           <Button style={cta} href="https://megashoppingribeirao.shop">
@@ -42,7 +46,7 @@ const Email = ({ nome }: Props) => (
 
 export const template = {
   component: Email,
-  subject: 'Pagamento cancelado — MEGA SHOPPING',
+  subject: 'Sobre o seu pedido — MEGA SHOPPING',
   displayName: 'Pagamento cancelado',
   previewData: { nome: 'Maria' },
 } satisfies TemplateEntry
