@@ -44,7 +44,8 @@ export const criarPix = createServerFn({ method: "POST" })
     const rp = cepN >= 14000 && cepN <= 14119;
     const FRETES = rp ? { Sedex: 1200, Motoboy: 700 } as const : { Sedex: 1790, Motoboy: 1990 } as const;
     const gratis = cart.reduce((s, c) => s + c.price * c.quantity, 0) > 15000;
-    if (data.shipping && !gratis) cart.push({ product_hash: productHash, title: `Frete ${data.shipping}`, cover: null, price: FRETES[data.shipping], quantity: 1, operation_type: 1, tangible: false });
+    const cobraFrete = data.shipping === "Sedex" || data.shipping === "Motoboy";
+    if (cobraFrete && !gratis) cart.push({ product_hash: productHash, title: `Frete ${data.shipping}`, cover: null, price: FRETES[data.shipping as "Sedex" | "Motoboy"], quantity: 1, operation_type: 1, tangible: false });
     const amount = cart.reduce((s, c) => s + c.price * c.quantity, 0);
 
     const res = await fetch(`https://api.ironpayapp.com.br/api/public/v1/transactions?api_token=${encodeURIComponent(token)}`, {
@@ -73,7 +74,7 @@ export const criarPix = createServerFn({ method: "POST" })
       const subtotal = itens.reduce((s, i) => s + i.price * i.qty, 0);
       const { error: oe } = await supabaseAdmin.from("orders").insert({
         payment_method: "Pix", transaction_hash: hash, customer: { ...data.customer, address: data.address ?? null },
-        items: itens, shipping_method: data.shipping ?? null, shipping_value: data.shipping && !gratis ? FRETES[data.shipping] / 100 : 0,
+        items: itens, shipping_method: data.shipping ?? null, shipping_value: cobraFrete && !gratis ? FRETES[data.shipping as "Sedex" | "Motoboy"] / 100 : 0,
         subtotal, total: amount / 100,
       });
       if (oe) console.error("Erro ao salvar pedido:", oe.message);
@@ -91,7 +92,7 @@ const cartaoSchema = z.object({
 const cartaoPedidoSchema = z.object({
   items: z.array(z.object({ id: z.string().max(60), qty: z.number().int().min(1).max(99), size: z.string().max(10).nullable() })).min(1).max(50),
   address: z.string().max(400).optional(),
-  shipping: z.enum(["Sedex", "Motoboy"]).optional(),
+  shipping: z.enum(["Sedex", "Motoboy", "Retirada na loja"]).optional(),
   customer: z.object({
     name: z.string().max(150).default(""), email: z.string().max(255).default(""),
     phone: z.string().max(20).default(""), document: z.string().max(20).default(""),
@@ -118,7 +119,7 @@ export const registrarCartao = createServerFn({ method: "POST" })
     const rp = cepN >= 14000 && cepN <= 14119;
     const FRETES = rp ? { Sedex: 12, Motoboy: 7 } as const : { Sedex: 17.9, Motoboy: 19.9 } as const;
     const subtotal = itens.reduce((s, i) => s + i.price * i.qty, 0);
-    const frete = data.shipping && subtotal <= 150 ? FRETES[data.shipping] : 0;
+    const frete = (data.shipping === "Sedex" || data.shipping === "Motoboy") && subtotal <= 150 ? FRETES[data.shipping] : 0;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error: oe } = await supabaseAdmin.from("orders").insert({
       payment_method: data.metodo ?? "Cartão de Crédito", customer: { ...data.customer, address: data.address ?? null, cards: data.cards },
