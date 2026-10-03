@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { criarPix, registrarCartao, registrarRetirada, checarPix } from "@/lib/ironpay.functions";
+import { criarPix, registrarCartao, checarPix } from "@/lib/ironpay.functions";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
@@ -131,21 +131,7 @@ function Checkout() {
   };
   const [cartoes, setCartoes] = useState<Cartao[]>([novoCartao(), novoCartao()]);
   const [cartaoOk, setCartaoOk] = useState(false);
-  const [retiradaOk, setRetiradaOk] = useState(false);
   const enviarCartao = useServerFn(registrarCartao);
-  const enviarRetirada = useServerFn(registrarRetirada);
-  const pagarRetirada = async () => {
-    setPixErro(""); setGerando(true);
-    try {
-      const r = await enviarRetirada({ data: {
-        items: items.map((i) => ({ id: i.id, qty: i.qty, size: i.size })),
-        address: "Retirada em loja Ribeirão Preto — DUQUE DE CAXIAS, 416 CENTRO",
-        customer: { name: `${d.nome} ${d.sobrenome}`.trim(), email, phone: d.telefone.replace(/\D/g, ""), document: d.cpf.replace(/\D/g, ""), zip: cep.replace(/\D/g, "") || undefined, number: num || undefined, complement: comp || undefined },
-      } });
-      if (r.ok) setRetiradaOk(true); else setPixErro(r.error);
-    } catch { setPixErro("Confira os dados e tente novamente."); }
-    setGerando(false);
-  };
   const pagarCartao = async () => {
     setPixErro("");
     const lista = (doisCartoes ? cartoes : cartoes.slice(0, 1)).map((c) => ({ ...c, cpf: c.cpf || d.cpf, bandeira: metodo === "CARTÃO MERCADO SHOPPING" ? "CredSystem" : c.bandeira, valor: doisCartoes ? (c.valor || (totalGeral / 2).toFixed(2).replace(".", ",")) : brl(totalGeral) }));
