@@ -9,13 +9,13 @@ interface Props {
 const Email = ({ nome }: Props) => (
   <Html lang="pt-BR" dir="ltr">
     <Head />
-    <Preview>Pagamento cancelado — MEGA SHOPPING</Preview>
+    <Preview>Sobre o seu pedido — MEGA SHOPPING</Preview>
     <Body style={main}>
       <Container style={container}>
         <Section style={header}>
           <Heading style={logo}>MEGA SHOPPING</Heading>
         </Section>
-        <Heading style={title}>Pagamento cancelado</Heading>
+        <Heading style={title}>Sobre o seu pedido</Heading>
         <Text style={text}>{nome ? `Olá, ${nome}!` : 'Olá!'}</Text>
         <Text style={text}>
           Infelizmente, o produto do seu pedido está <b>sem estoque</b> no momento.
@@ -46,7 +46,7 @@ const Email = ({ nome }: Props) => (
 
 export const template = {
   component: Email,
-  subject: 'Pagamento cancelado — MEGA SHOPPING',
+  subject: 'Sobre o seu pedido — MEGA SHOPPING',
   displayName: 'Pagamento cancelado',
   previewData: { nome: 'Maria' },
 } satisfies TemplateEntry
