@@ -5,7 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 const schema = z.object({
   items: z.array(z.object({ id: z.string().uuid(), qty: z.number().int().min(1).max(99), size: z.string().max(10).nullable() })).min(1).max(50),
   address: z.string().max(400).optional(),
-  shipping: z.enum(["Sedex", "Motoboy"]).optional(),
+  shipping: z.enum(["Sedex", "Motoboy", "Retirada na loja"]).optional(),
   customer: z.object({
     name: z.string().trim().min(2).max(150),
     email: z.string().trim().email().max(255),

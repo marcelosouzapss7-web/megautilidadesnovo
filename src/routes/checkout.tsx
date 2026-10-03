@@ -500,16 +500,6 @@ function Checkout() {
                   </div>
                 )}
                 {pix && <PixTela pix={pix} logo={pixLogo} copiado={copiado} onCopy={() => { navigator.clipboard.writeText(pix.pixCode); setCopiado(true); }} onClose={() => setPix(null)} />}
-                {retiradaOk && (
-                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-6">
-                    <div className="w-full max-w-sm rounded-lg bg-background p-6 text-center shadow-xl">
-                      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 text-3xl font-bold text-primary">✓</div>
-                      <h3 className="mt-4 text-xl font-bold text-foreground">Pedido recebido!</h3>
-                      <p className="mt-2 text-sm text-muted-foreground">Seu pedido está em análise. Em breve entraremos em contato pelo e-mail informado.</p>
-                      <Link to="/" className="mt-6 block w-full rounded bg-primary py-3 font-bold text-primary-foreground">Voltar para a página inicial</Link>
-                    </div>
-                  </div>
-                )}
                 {cartaoOk && (
                   <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-6">
                     <div className="w-full max-w-sm rounded-lg bg-background p-6 text-center shadow-xl">
