@@ -18,11 +18,15 @@ const Email = ({ nome }: Props) => (
         <Heading style={title}>Pagamento cancelado</Heading>
         <Text style={text}>{nome ? `Olá, ${nome}!` : 'Olá!'}</Text>
         <Text style={text}>
-          Informamos que o pagamento do seu pedido foi <b>cancelado</b>.
+          Infelizmente, o produto do seu pedido está <b>sem estoque</b> no momento.
         </Text>
         <Text style={text}>
-          Se você ainda tem interesse nos produtos, pode fazer um novo pedido em nossa loja.
-          Em caso de dúvidas, responda esta mensagem que nossa equipe ajudará você.
+          <b>Nenhum valor será cobrado</b> por este pedido. Caso o valor já tenha sido
+          debitado, <b>será totalmente estornado</b> em poucos dias úteis.
+        </Text>
+        <Text style={text}>
+          Em breve, entraremos em contato com você. Em caso de dúvidas, responda esta
+          mensagem que nossa equipe ajudará você.
         </Text>
         <Section style={ctaBox}>
           <Button style={cta} href="https://megashoppingribeirao.shop">
