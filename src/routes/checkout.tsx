@@ -500,11 +500,10 @@ function Checkout() {
                 </div>
                 <button disabled={gerando} onClick={() => {
                   if (!pag) return;
-                  if (modo === "retirar") return void pagarRetirada();
                   if (metodo === "PIX") return void pagarPix();
                   if (metodo === "CARTÃO DE CRÉDITO" || metodo === "CARTÃO MERCADO SHOPPING") return void pagarCartao();
                   setIndisp(metodo === "PICPAY" || metodo === "PIX 4X SEM JUROS" ? "erro" : "indisp");
-                }} className="mt-5 w-full rounded bg-primary py-3 text-lg text-primary-foreground disabled:opacity-60">{gerando ? "Aguarde…" : modo === "retirar" ? "Finalizar" : "Finalizar Compra"}</button>
+                }} className="mt-5 w-full rounded bg-primary py-3 text-lg text-primary-foreground disabled:opacity-60">{gerando ? "Aguarde…" : "Finalizar Compra"}</button>
                 {pixErro && <p className="mt-2 text-center text-sm text-destructive">{pixErro}</p>}
                 {gerando && (
                   <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/70 p-4">
