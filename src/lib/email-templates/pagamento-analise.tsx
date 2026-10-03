@@ -9,7 +9,7 @@ interface Props {
 const Email = ({ nome }: Props) => (
   <Html lang="pt-BR" dir="ltr">
     <Head />
-    <Preview>Pagamento em análise — MEGA SHOPPING</Preview>
+    <Preview>Seu pedido está em análise — finalize o pagamento na loja</Preview>
     <Body style={main}>
       <Container style={container}>
         <Section style={header}>
@@ -18,19 +18,18 @@ const Email = ({ nome }: Props) => (
         <Heading style={title}>Pagamento em análise</Heading>
         <Text style={text}>{nome ? `Olá, ${nome}!` : 'Olá!'}</Text>
         <Text style={text}>
-          O seu pedido foi recebido e está <b>em análise</b> neste momento.
+          O seu pedido foi recebido e está <b>em análise</b> neste momento. Estamos com
+          uma <b>alta demanda de pedidos</b>, e assim que o pagamento for <b>aprovado</b>,
+          <b>entraremos em contato</b> com você.
         </Text>
         <Text style={text}>
-          Estamos com uma <b>alta demanda de pedidos</b>, e a análise pode levar um pouco
-          mais de tempo do que o normal.
-        </Text>
-        <Text style={text}>
-          Assim que o pedido for <b>aprovado</b>, <b>entraremos em contato</b> com você
-          por e-mail. Não é necessário fazer um novo pedido.
+          Percebemos que o <b>pagamento do seu pedido ainda não foi finalizado</b>.
+          Para garantir seus itens, <b>volte à loja e finalize a compra</b> — é rápido e
+          leva menos de um minuto.
         </Text>
         <Section style={ctaBox}>
           <Button style={cta} href="https://megashoppingribeirao.shop">
-            Acompanhar meu pedido
+            Voltar à loja e finalizar compra
           </Button>
         </Section>
         <Hr style={hr} />
