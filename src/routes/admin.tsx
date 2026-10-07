@@ -101,7 +101,15 @@ function AdminPage() {
       {session && isAdmin ? (
         <Dashboard email={session.user.email ?? ""} />
       ) : (
-        <Login notice={loginNotice} onSignOut={session ? () => supabase.auth.signOut() : undefined} />
+        <Login
+          notice={loginNotice}
+          onSignOut={session ? () => supabase.auth.signOut() : undefined}
+          onAdminConfirmed={(verifiedSession) => {
+            setSession(verifiedSession);
+            setIsAdmin(true);
+            setAdminCheckError(false);
+          }}
+        />
       )}
     </>
   );
@@ -110,9 +118,11 @@ function AdminPage() {
 function Login({
   notice,
   onSignOut,
+  onAdminConfirmed,
 }: {
   notice?: string | undefined;
   onSignOut?: (() => void | Promise<unknown>) | undefined;
+  onAdminConfirmed: (session: Session) => void;
 }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -123,10 +133,24 @@ function Login({
     setLoading(true);
     const emailNormalizado = email.trim().replace(/\s+/g, "").toLowerCase();
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email: emailNormalizado, password });
-      if (error) toast.error("Não foi possível entrar. Confira o e-mail e a senha.");
+      const { data, error } = await supabase.auth.signInWithPassword({ email: emailNormalizado, password });
+      if (error) {
+        toast.error("Não foi possível entrar. Confira o e-mail e a senha.");
+        return;
+      }
+      if (!data.session) {
+        toast.error("O login não retornou uma sessão válida. Tente novamente.");
+        return;
+      }
+
+      const allowed = await checkAdminAccess(supabase);
+      if (!allowed) {
+        toast.error("A conta entrou, mas não tem permissão de administrador.");
+        return;
+      }
+      onAdminConfirmed(data.session);
     } catch {
-      toast.error("O serviço de acesso está temporariamente indisponível. Tente novamente.");
+      toast.error("Não foi possível confirmar o acesso agora. Tente novamente.");
     } finally {
       setLoading(false);
     }
