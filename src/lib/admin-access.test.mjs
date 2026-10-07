@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { checkAdminAccess } from "./admin-access.ts";
+import { checkAdminAccess, resolveAdminAccess } from "./admin-access.ts";
 
 function createClient(results, refreshResult = { error: null }) {
   let calls = 0;
@@ -54,6 +54,20 @@ describe("admin access validation", () => {
     });
 
     await expect(checkAdminAccess(client.client)).rejects.toBe(refreshError);
+    expect(client.calls()).toBe(1);
+  });
+
+  it("marks successful authorization without an error state", async () => {
+    const client = createClient([{ data: true, error: null }]);
+
+    expect(await resolveAdminAccess(client.client)).toEqual({ access: true, error: false });
+    expect(client.calls()).toBe(1);
+  });
+
+  it("keeps RPC failures out of the successful login path", async () => {
+    const client = createClient([{ data: null, error: { message: "RPC unavailable" } }]);
+
+    expect(await resolveAdminAccess(client.client)).toEqual({ access: null, error: true });
     expect(client.calls()).toBe(1);
   });
 });

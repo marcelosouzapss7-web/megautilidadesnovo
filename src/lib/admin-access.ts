@@ -34,3 +34,11 @@ export async function checkAdminAccess(client: AdminAccessClient): Promise<boole
   if (retryResult.error) throw retryResult.error;
   return retryResult.data === true;
 }
+
+export async function resolveAdminAccess(client: AdminAccessClient) {
+  try {
+    return { access: await checkAdminAccess(client), error: false } as const;
+  } catch {
+    return { access: null, error: true } as const;
+  }
+}

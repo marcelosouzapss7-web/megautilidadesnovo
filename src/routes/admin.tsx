@@ -32,7 +32,7 @@ import {
   prepareLogoUpload,
   type LogoDisplay,
 } from "@/lib/brand-identity";
-import { checkAdminAccess } from "@/lib/admin-access";
+import { resolveAdminAccess } from "@/lib/admin-access";
 
 export const Route = createFileRoute("/admin")({
   ssr: false,
@@ -75,13 +75,12 @@ function AdminPage() {
     let active = true;
     setIsAdmin(null);
     setAdminCheckError(false);
-    checkAdminAccess(supabase)
-      .then((allowed) => {
-        if (active) setIsAdmin(allowed);
-      })
-      .catch(() => {
-        if (active) setAdminCheckError(true);
-      });
+    resolveAdminAccess(supabase).then((result) => {
+      if (active) {
+        setIsAdmin(result.access);
+        setAdminCheckError(result.error);
+      }
+    });
     return () => {
       active = false;
     };
@@ -104,11 +103,7 @@ function AdminPage() {
         <Login
           notice={loginNotice}
           onSignOut={session ? () => supabase.auth.signOut() : undefined}
-          onAdminConfirmed={(verifiedSession) => {
-            setSession(verifiedSession);
-            setIsAdmin(true);
-            setAdminCheckError(false);
-          }}
+          onSessionReceived={setSession}
         />
       )}
     </>
@@ -118,11 +113,11 @@ function AdminPage() {
 function Login({
   notice,
   onSignOut,
-  onAdminConfirmed,
+  onSessionReceived,
 }: {
   notice?: string | undefined;
   onSignOut?: (() => void | Promise<unknown>) | undefined;
-  onAdminConfirmed: (session: Session) => void;
+  onSessionReceived: (session: Session) => void;
 }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -142,13 +137,9 @@ function Login({
         toast.error("O login não retornou uma sessão válida. Tente novamente.");
         return;
       }
-
-      const allowed = await checkAdminAccess(supabase);
-      if (!allowed) {
-        toast.error("A conta entrou, mas não tem permissão de administrador.");
-        return;
-      }
-      onAdminConfirmed(data.session);
+      // The session effect performs the single authorization check for both
+      // restored sessions and newly authenticated users.
+      onSessionReceived(data.session);
     } catch {
       toast.error("Não foi possível confirmar o acesso agora. Tente novamente.");
     } finally {
