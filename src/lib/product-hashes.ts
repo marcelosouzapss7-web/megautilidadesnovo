@@ -11,6 +11,30 @@ export type ProductHashProduct = {
   offer_hash: string | null;
 };
 
+export const PRODUCT_HASH_PAGE_SIZE = 500;
+
+export async function fetchAllProductHashes(
+  fetchPage: (afterId: string | null, pageSize: number) => Promise<ProductHashProduct[]>,
+  pageSize = PRODUCT_HASH_PAGE_SIZE,
+): Promise<ProductHashProduct[]> {
+  const products: ProductHashProduct[] = [];
+  let cursor: string | null = null;
+
+  while (true) {
+    const page = await fetchPage(cursor, pageSize);
+    if (page.length === 0) return products;
+
+    const nextCursor = page[page.length - 1]?.id;
+    if (!nextCursor || (cursor !== null && nextCursor <= cursor)) {
+      throw new Error("A paginação não avançou para o próximo produto.");
+    }
+
+    products.push(...page);
+    if (page.length < pageSize) return products;
+    cursor = nextCursor;
+  }
+}
+
 export function updateProductHashDraft(
   drafts: ProductHashDrafts,
   productId: string,

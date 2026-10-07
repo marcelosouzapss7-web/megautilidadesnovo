@@ -4,7 +4,9 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
   getChangedProductHashValues,
+  fetchAllProductHashes,
   getProductHashValues,
+  PRODUCT_HASH_PAGE_SIZE,
   saveProductHashChanges,
   updateProductHashDraft,
   type ProductHashDrafts,
@@ -24,13 +26,20 @@ export function Hashes() {
   } = useQuery({
     queryKey: ["product-hashes"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("products")
-        .select("id,name,product_hash,offer_hash")
-        .order("name", { ascending: true });
-      if (error) throw error;
-      return data;
+      const products = await fetchAllProductHashes(async (afterId, pageSize) => {
+        let query = supabase
+          .from("products")
+          .select("id,name,product_hash,offer_hash")
+          .order("id", { ascending: true })
+          .limit(pageSize);
+        if (afterId) query = query.gt("id", afterId);
+        const { data, error } = await query;
+        if (error) throw error;
+        return data ?? [];
+      }, PRODUCT_HASH_PAGE_SIZE);
+      return products.sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
     },
+    retry: false,
   });
 
   const changedProducts = products.filter(
