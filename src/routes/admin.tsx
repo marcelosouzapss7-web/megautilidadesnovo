@@ -2,7 +2,19 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
-import { Package, Settings, LogOut, Trash2, Store, Pencil, ShoppingBag, Download, Mail, Hash } from "lucide-react";
+import {
+  Package,
+  Settings,
+  LogOut,
+  Trash2,
+  Store,
+  Pencil,
+  ShoppingBag,
+  Download,
+  Mail,
+  Hash,
+  Terminal,
+} from "lucide-react";
 import { enviarEmailPagamentoAprovado, enviarEmailStatus } from "@/lib/email.functions";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +25,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Toaster } from "@/components/ui/sonner";
 import { Hashes } from "@/components/admin/Hashes";
+import { DebugConsole } from "@/components/admin/DebugConsole";
 
 export const Route = createFileRoute("/admin")({
   ssr: false,
@@ -116,7 +129,7 @@ function Login() {
 }
 
 function Dashboard({ email }: { email: string }) {
-  const [tab, setTab] = useState<"produtos" | "pedidos" | "hashes" | "config" | "contato">("produtos");
+  const [tab, setTab] = useState<"produtos" | "pedidos" | "hashes" | "debug" | "config" | "contato">("produtos");
   const qc = useQueryClient();
   async function logout() {
     qc.clear();
@@ -124,6 +137,9 @@ function Dashboard({ email }: { email: string }) {
   }
   const item = (k: typeof tab, label: string, Icon: typeof Package) => (
     <button
+      type="button"
+      aria-label={label}
+      title={label}
       onClick={() => setTab(k)}
       className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${tab === k ? "bg-primary text-primary-foreground" : "text-sidebar-foreground hover:bg-sidebar-accent"}`}
     >
@@ -136,6 +152,7 @@ function Dashboard({ email }: { email: string }) {
         <p className="mb-4 hidden text-lg font-extrabold text-primary sm:block">Admin</p>
         {item("produtos", "Produtos", Package)}
         {item("hashes", "Hashes", Hash)}
+        {item("debug", "Debug Console", Terminal)}
         {item("pedidos", "Pedidos", ShoppingBag)}
         {item("config", "Configuração", Settings)}
         {item("contato", "Contato", Mail)}
@@ -149,7 +166,21 @@ function Dashboard({ email }: { email: string }) {
           <p className="hidden truncate text-xs text-muted-foreground sm:block">{email}</p>
         </div>
       </aside>
-      <main className="min-w-0 flex-1 p-4 sm:p-8">{tab === "produtos" ? <Produtos /> : tab === "hashes" ? <Hashes /> : tab === "pedidos" ? <Pedidos /> : tab === "contato" ? <Contato /> : <Config />}</main>
+      <main className="min-w-0 flex-1 p-4 sm:p-8">
+        {tab === "produtos" ? (
+          <Produtos />
+        ) : tab === "hashes" ? (
+          <Hashes />
+        ) : tab === "debug" ? (
+          <DebugConsole />
+        ) : tab === "pedidos" ? (
+          <Pedidos />
+        ) : tab === "contato" ? (
+          <Contato />
+        ) : (
+          <Config />
+        )}
+      </main>
     </div>
   );
 }

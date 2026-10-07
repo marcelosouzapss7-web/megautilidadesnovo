@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { emitAdminDebugEvent } from "@/lib/admin-debug-console";
 
 export function Hashes() {
   const queryClient = useQueryClient();
@@ -27,16 +28,73 @@ export function Hashes() {
     queryKey: ["product-hashes"],
     queryFn: async () => {
       const products = await fetchAllProductHashes(async (afterId, pageSize) => {
-        let query = supabase
+        emitAdminDebugEvent({
+          source: "product-hashes",
+          phase: "request",
+          status: "info",
+          message: "Consulta de uma página de produtos iniciada.",
+          details: { table: "products", orderBy: "id asc", afterId, pageSize },
+        });
+        const request = supabase
           .from("products")
           .select("id,name,product_hash,offer_hash")
           .order("id", { ascending: true })
           .limit(pageSize);
-        if (afterId) query = query.gt("id", afterId);
-        const { data, error } = await query;
-        if (error) throw error;
-        return data ?? [];
-      }, PRODUCT_HASH_PAGE_SIZE);
+        const query = afterId ? request.gt("id", afterId) : request;
+        let response: Awaited<typeof query>;
+        try {
+          response = await query;
+        } catch (error) {
+          emitAdminDebugEvent({
+            source: "product-hashes",
+            phase: "response",
+            status: "error",
+            message: "A requisição da página não recebeu uma resposta.",
+            details: {
+              afterId,
+              pageSize,
+              error: error instanceof Error ? error.message : String(error),
+            },
+          });
+          throw error;
+        }
+        const { data, error } = response;
+        if (error) {
+          emitAdminDebugEvent({
+            source: "product-hashes",
+            phase: "response",
+            status: "error",
+            message: "A consulta da página falhou.",
+            details: { afterId, pageSize, error: { message: error.message, code: error.code } },
+          });
+          throw error;
+        }
+        const page = data ?? [];
+        emitAdminDebugEvent({
+          source: "product-hashes",
+          phase: "response",
+          status: "success",
+          message: "Página de produtos carregada.",
+          details: { afterId, pageSize, returned: page.length, payload: page },
+        });
+        return page;
+      }, PRODUCT_HASH_PAGE_SIZE).catch((error: unknown) => {
+        emitAdminDebugEvent({
+          source: "product-hashes",
+          phase: "pagination",
+          status: "error",
+          message: "O carregamento paginado foi interrompido.",
+          details: { error: error instanceof Error ? error.message : String(error) },
+        });
+        throw error;
+      });
+      emitAdminDebugEvent({
+        source: "product-hashes",
+        phase: "complete",
+        status: "success",
+        message: "Carregamento paginado concluído.",
+        details: { totalProducts: products.length },
+      });
       return products.sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
     },
     retry: false,
