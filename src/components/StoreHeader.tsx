@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Search, User, ShoppingBag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cart, useCart } from "@/lib/cart";
@@ -8,6 +8,7 @@ import { CartDrawer } from "@/components/CartDrawer";
 import { getBrandPresentation } from "@/lib/brand-identity";
 
 export function StoreHeader() {
+  const queryClient = useQueryClient();
   const [menu, setMenu] = useState(false);
   const [busca, setBusca] = useState(false);
   const [termo, setTermo] = useState("");
@@ -37,10 +38,24 @@ export function StoreHeader() {
       return data;
     },
   });
+  useEffect(() => {
+    const channel = supabase
+      .channel("public-site-settings")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "site_settings" },
+        () => void queryClient.invalidateQueries({ queryKey: ["site_settings"] }),
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
   const brand = getBrandPresentation(settings);
   return (
-    <header className="sticky top-0 z-10 flex h-[72px] items-center justify-between bg-header px-4 shadow-sm">
-      <div className="flex items-center gap-5 text-header-foreground">
+    <header className="sticky top-0 z-10 grid h-[72px] grid-cols-[1fr_auto_1fr] items-center bg-header px-4 shadow-sm">
+      <div className="flex items-center justify-self-start gap-5 text-header-foreground">
         <button
           aria-label="Abrir menu"
           onClick={() => setMenu(true)}
@@ -72,13 +87,13 @@ export function StoreHeader() {
       <Link
         to="/"
         aria-label={brand.name}
-        className="flex min-w-0 max-w-[48%] items-center justify-center gap-1.5 text-header-foreground sm:gap-2"
+        className="flex min-w-0 max-w-[42vw] items-center justify-center text-header-foreground"
       >
         {brand.showImage && brand.logoUrl && (
           <img
             src={brand.logoUrl}
             alt={brand.showText ? "" : brand.name}
-            className="max-h-9 max-w-[min(24vw,112px)] object-contain sm:max-h-11 sm:max-w-[min(22vw,160px)]"
+            className="max-h-10 max-w-[min(38vw,180px)] object-contain sm:max-h-11 sm:max-w-[min(34vw,200px)]"
           />
         )}
         {brand.showText && (
@@ -90,7 +105,7 @@ export function StoreHeader() {
           </span>
         )}
       </Link>
-      <div className="flex items-center gap-5 text-header-foreground">
+      <div className="flex items-center justify-self-end gap-5 text-header-foreground">
         <User className="size-7" strokeWidth={2.4} />
         <button
           aria-label="Abrir sacola"

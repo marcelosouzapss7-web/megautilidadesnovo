@@ -429,6 +429,7 @@ function BrandIdentity({
       const readyFile = await prepareLogoUpload(file);
       setSelectedFile(readyFile);
       setPreviewUrl(URL.createObjectURL(readyFile));
+      setMode("image");
       setRemovingLogo(false);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Não foi possível abrir esta imagem.");
@@ -457,7 +458,11 @@ function BrandIdentity({
     }
     if (removingLogo) logoUrl = null;
 
-    const saved = await onSave({ brand_name: brandName, logo_display: mode, ...(selectedFile || removingLogo ? { logo_url: logoUrl } : {}) });
+    const saved = await onSave({
+      brand_name: brandName,
+      logo_display: selectedFile ? "image" : mode,
+      ...(selectedFile || removingLogo ? { logo_url: logoUrl } : {}),
+    });
     if (!saved) {
       if (uploadedPath) await supabase.storage.from("brand-assets").remove([uploadedPath]);
       return;
@@ -509,7 +514,14 @@ function BrandIdentity({
             ["both", "Texto e imagem"],
           ] as const).map(([value, label]) => (
             <label key={value} className={`flex cursor-pointer items-center gap-2 rounded-lg border p-3 text-sm ${mode === value ? "border-primary bg-primary/5" : "border-border"}`}>
-              <input type="radio" name="logo-display" value={value} checked={mode === value} onChange={() => setMode(value)} disabled={saving} />
+              <input
+                type="radio"
+                name="logo-display"
+                value={value}
+                checked={mode === value}
+                onChange={() => setMode(selectedFile ? "image" : value)}
+                disabled={saving || Boolean(selectedFile)}
+              />
               {label}
             </label>
           ))}

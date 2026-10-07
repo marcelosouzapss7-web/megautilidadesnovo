@@ -25,6 +25,13 @@ describe("brand identity settings", () => {
     expect(
       getBrandPresentation({
         brand_name: "Loja Nova",
+        logo_url: "/logo-novo.png",
+        logo_display: "image",
+      }),
+    ).toMatchObject({ showImage: true, showText: false, logoUrl: "/logo-novo.png" });
+    expect(
+      getBrandPresentation({
+        brand_name: "Loja Nova",
         logo_url: "/logo.png",
         logo_display: "both",
       }),
