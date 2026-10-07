@@ -65,9 +65,11 @@ export type Database = {
           image_url: string | null
           images: string[]
           name: string
+          offer_hash: string | null
           old_price: number | null
           position: number
           price: number
+          product_hash: string | null
         }
         Insert: {
           created_at?: string
@@ -77,9 +79,11 @@ export type Database = {
           image_url?: string | null
           images?: string[]
           name: string
+          offer_hash?: string | null
           old_price?: number | null
           position?: number
           price?: number
+          product_hash?: string | null
         }
         Update: {
           created_at?: string
@@ -89,9 +93,11 @@ export type Database = {
           image_url?: string | null
           images?: string[]
           name?: string
+          offer_hash?: string | null
           old_price?: number | null
           position?: number
           price?: number
+          product_hash?: string | null
         }
         Relationships: []
       }
