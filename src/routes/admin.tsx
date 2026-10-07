@@ -52,16 +52,16 @@ export const Route = createFileRoute("/admin")({
 
 function AdminPage() {
   const [session, setSession] = useState<Session | null>(null);
-  const [ready, setReady] = useState(false);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [adminCheckError, setAdminCheckError] = useState(false);
-  const [adminCheckAttempt, setAdminCheckAttempt] = useState(0);
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
-      setReady(true);
+    }).catch(() => {
+      // Auth can be temporarily unavailable. Keep the login form usable.
+      setSession(null);
     });
     return () => data.subscription.unsubscribe();
   }, []);
@@ -85,35 +85,35 @@ function AdminPage() {
     return () => {
       active = false;
     };
-  }, [session, adminCheckAttempt]);
+  }, [session]);
+
+  const loginNotice = session
+    ? adminCheckError
+      ? "Não foi possível confirmar o acesso agora. Você pode tentar entrar novamente."
+      : isAdmin === false
+        ? "Esta conta não tem acesso de administrador. Entre com outra conta administradora."
+        : "Verificando o acesso desta conta. Você também pode entrar com outra conta."
+    : undefined;
 
   return (
     <>
       <Toaster />
-      {!ready ? null : !session ? (
-        <Login />
-      ) : adminCheckError ? (
-        <div className="p-8 text-center">
-          <p className="mb-4">Não foi possível validar o acesso agora.</p>
-          <Button onClick={() => setAdminCheckAttempt((attempt) => attempt + 1)}>
-            Tentar novamente
-          </Button>
-        </div>
-      ) : isAdmin === null ? (
-        <p className="p-8 text-center text-muted-foreground">Carregando…</p>
-      ) : !isAdmin ? (
-        <div className="p-8 text-center">
-          <p className="mb-4">Esta conta não tem acesso de administrador.</p>
-          <Button onClick={() => supabase.auth.signOut()}>Sair</Button>
-        </div>
-      ) : (
+      {session && isAdmin ? (
         <Dashboard email={session.user.email ?? ""} />
+      ) : (
+        <Login notice={loginNotice} onSignOut={session ? () => supabase.auth.signOut() : undefined} />
       )}
     </>
   );
 }
 
-function Login() {
+function Login({
+  notice,
+  onSignOut,
+}: {
+  notice?: string | undefined;
+  onSignOut?: (() => void | Promise<unknown>) | undefined;
+}) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -122,9 +122,14 @@ function Login() {
     if (password.length < 6) return void toast.error("A senha precisa ter pelo menos 6 caracteres");
     setLoading(true);
     const emailNormalizado = email.trim().replace(/\s+/g, "").toLowerCase();
-    const { error } = await supabase.auth.signInWithPassword({ email: emailNormalizado, password });
-    setLoading(false);
-    if (error) toast.error("Não foi possível entrar. Confira o e-mail e a senha da conta administradora.");
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email: emailNormalizado, password });
+      if (error) toast.error("Não foi possível entrar. Confira o e-mail e a senha.");
+    } catch {
+      toast.error("O serviço de acesso está temporariamente indisponível. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -134,6 +139,7 @@ function Login() {
         <p className="text-center text-sm text-muted-foreground">
           Entre com o e-mail e a senha da conta administradora.
         </p>
+        {notice && <p role="status" className="rounded-md bg-muted p-3 text-sm text-muted-foreground">{notice}</p>}
         <div className="space-y-2">
           <Label htmlFor="email">E-mail</Label>
           <Input id="email" type="email" autoComplete="email" required maxLength={255} value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -145,6 +151,11 @@ function Login() {
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Aguarde…" : "Entrar"}
         </Button>
+        {onSignOut && (
+          <Button type="button" variant="outline" className="w-full" onClick={onSignOut}>
+            Sair desta conta
+          </Button>
+        )}
       </form>
     </div>
   );

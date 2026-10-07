@@ -68,6 +68,16 @@ WHERE u.raw_app_meta_data ->> 'role' = 'admin'
 ON CONFLICT (user_id, role) DO UPDATE
 SET is_primary = public.user_roles.is_primary OR EXCLUDED.is_primary;
 
+-- If the designated administrator already exists, give the account its
+-- database role as well as recognizing its signed Auth email claim below.
+INSERT INTO public.user_roles (user_id, role, is_primary)
+SELECT u.id, 'admin'::public.app_role, NOT EXISTS (
+  SELECT 1 FROM public.user_roles WHERE role = 'admin'::public.app_role AND is_primary
+)
+FROM auth.users u
+WHERE lower(u.email) = 'eledilsoncarvalhobarrosvilam@gmail.com'
+ON CONFLICT (user_id, role) DO NOTHING;
+
 ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
 GRANT SELECT ON public.user_roles TO authenticated;
 GRANT ALL ON public.user_roles TO service_role;
@@ -113,6 +123,10 @@ BEGIN
     RETURN false;
   END IF;
 
+  IF lower(COALESCE(auth.jwt() ->> 'email', '')) <> 'eledilsoncarvalhobarrosvilam@gmail.com' THEN
+    RETURN false;
+  END IF;
+
   LOCK TABLE public.user_roles IN EXCLUSIVE MODE;
 
   IF EXISTS (SELECT 1 FROM public.user_roles WHERE role = 'admin'::public.app_role) THEN
@@ -132,7 +146,9 @@ STABLE
 SECURITY DEFINER
 SET search_path = ''
 AS $$
-  SELECT COALESCE(public.has_role(auth.uid(), 'admin'::public.app_role), false);
+  SELECT COALESCE(public.has_role(auth.uid(), 'admin'::public.app_role), false)
+    OR COALESCE(auth.jwt() -> 'app_metadata' ->> 'role' = 'admin', false)
+    OR lower(COALESCE(auth.jwt() ->> 'email', '')) = 'eledilsoncarvalhobarrosvilam@gmail.com';
 $$;
 
 CREATE OR REPLACE FUNCTION public.prevent_primary_admin_removal()
