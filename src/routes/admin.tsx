@@ -26,7 +26,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Toaster } from "@/components/ui/sonner";
 import { Hashes } from "@/components/admin/Hashes";
 import { DebugConsole } from "@/components/admin/DebugConsole";
-import { canAccessAdmin, getBrandPresentation, getLogoFileProblem, prepareLogoUpload, type LogoDisplay } from "@/lib/brand-identity";
+import {
+  getBrandPresentation,
+  getLogoFileProblem,
+  prepareLogoUpload,
+  type LogoDisplay,
+} from "@/lib/brand-identity";
+import { checkAdminAccess } from "@/lib/admin-access";
 
 export const Route = createFileRoute("/admin")({
   ssr: false,
@@ -48,6 +54,8 @@ function AdminPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [ready, setReady] = useState(false);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [adminCheckError, setAdminCheckError] = useState(false);
+  const [adminCheckAttempt, setAdminCheckAttempt] = useState(0);
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
@@ -59,15 +67,38 @@ function AdminPage() {
   }, []);
 
   useEffect(() => {
-    if (!session) { setIsAdmin(null); return; }
-    supabase.rpc("is_product_admin").then(({ data, error }) => setIsAdmin(canAccessAdmin(data, error)));
-  }, [session]);
+    if (!session) {
+      setIsAdmin(null);
+      setAdminCheckError(false);
+      return;
+    }
+    let active = true;
+    setIsAdmin(null);
+    setAdminCheckError(false);
+    checkAdminAccess(supabase)
+      .then((allowed) => {
+        if (active) setIsAdmin(allowed);
+      })
+      .catch(() => {
+        if (active) setAdminCheckError(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, [session, adminCheckAttempt]);
 
   return (
     <>
       <Toaster />
       {!ready ? null : !session ? (
         <Login />
+      ) : adminCheckError ? (
+        <div className="p-8 text-center">
+          <p className="mb-4">Não foi possível validar o acesso agora.</p>
+          <Button onClick={() => setAdminCheckAttempt((attempt) => attempt + 1)}>
+            Tentar novamente
+          </Button>
+        </div>
       ) : isAdmin === null ? (
         <p className="p-8 text-center text-muted-foreground">Carregando…</p>
       ) : !isAdmin ? (
