@@ -5,6 +5,7 @@ import { Search, User, ShoppingBag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cart, useCart } from "@/lib/cart";
 import { CartDrawer } from "@/components/CartDrawer";
+import { getBrandPresentation } from "@/lib/brand-identity";
 
 export function StoreHeader() {
   const [menu, setMenu] = useState(false);
@@ -24,6 +25,19 @@ export function StoreHeader() {
   const t = norm(termo.trim());
   const achados = t ? produtos.filter((p) => norm(p.name).includes(t)) : [];
   const qtd = useCart().items.reduce((s, i) => s + i.qty, 0);
+  const { data: settings } = useQuery({
+    queryKey: ["site_settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("site_settings")
+        .select("brand_name,logo_url,logo_display")
+        .eq("id", 1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const brand = getBrandPresentation(settings);
   return (
     <header className="sticky top-0 z-10 flex h-[72px] items-center justify-between bg-header px-4 shadow-sm">
       <div className="flex items-center gap-5 text-header-foreground">
@@ -55,13 +69,26 @@ export function StoreHeader() {
           <Search className="size-7" strokeWidth={2.4} />
         </button>
       </div>
-      <Link to="/" aria-label="Mega Utilidades">
-        <span
-          className="text-xl font-extrabold uppercase tracking-tight text-header-foreground"
-          style={{ fontFamily: "Bebas Neue, sans-serif" }}
-        >
-          Mega Utilidades
-        </span>
+      <Link
+        to="/"
+        aria-label={brand.name}
+        className="flex min-w-0 max-w-[48%] items-center justify-center gap-1.5 text-header-foreground sm:gap-2"
+      >
+        {brand.showImage && brand.logoUrl && (
+          <img
+            src={brand.logoUrl}
+            alt={brand.showText ? "" : brand.name}
+            className="max-h-9 max-w-[min(24vw,112px)] object-contain sm:max-h-11 sm:max-w-[min(22vw,160px)]"
+          />
+        )}
+        {brand.showText && (
+          <span
+            className="truncate text-[clamp(0.8rem,4vw,1.25rem)] font-extrabold uppercase tracking-tight"
+            style={{ fontFamily: "Bebas Neue, sans-serif" }}
+          >
+            {brand.name}
+          </span>
+        )}
       </Link>
       <div className="flex items-center gap-5 text-header-foreground">
         <User className="size-7" strokeWidth={2.4} />

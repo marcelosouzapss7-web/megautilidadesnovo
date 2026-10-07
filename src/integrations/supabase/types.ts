@@ -103,28 +103,34 @@ export type Database = {
       }
       site_settings: {
         Row: {
+          brand_name: string
           footer_text: string | null
           hero_image_url: string | null
           id: number
           logo_url: string | null
+          logo_display: "text" | "image" | "both"
           payment_logo_url: string | null
           pix_logo_url: string | null
           updated_at: string
         }
         Insert: {
+          brand_name?: string
           footer_text?: string | null
           hero_image_url?: string | null
           id?: number
           logo_url?: string | null
+          logo_display?: "text" | "image" | "both"
           payment_logo_url?: string | null
           pix_logo_url?: string | null
           updated_at?: string
         }
         Update: {
+          brand_name?: string
           footer_text?: string | null
           hero_image_url?: string | null
           id?: number
           logo_url?: string | null
+          logo_display?: "text" | "image" | "both"
           payment_logo_url?: string | null
           pix_logo_url?: string | null
           updated_at?: string
@@ -154,6 +160,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      is_product_admin: { Args: never; Returns: boolean }
       admin_exists: { Args: never; Returns: boolean }
       claim_admin: { Args: never; Returns: boolean }
       has_role: {
