@@ -25,7 +25,7 @@ export function StoreHeader() {
   const achados = t ? produtos.filter((p) => norm(p.name).includes(t)) : [];
   const qtd = useCart().items.reduce((s, i) => s + i.qty, 0);
   return (
-    <header className="sticky top-0 z-10 grid h-[72px] grid-cols-[1fr_auto_1fr] items-center bg-black px-4 text-[#edbd32] shadow-sm">
+    <header className="store-header sticky top-0 z-10 grid h-[72px] grid-cols-[1fr_auto_1fr] items-center bg-black px-4 text-[#edbd32] shadow-sm">
       <div className="flex items-center justify-self-start gap-5">
         <button
           aria-label="Abrir menu"
@@ -61,7 +61,7 @@ export function StoreHeader() {
         className="flex min-w-0 max-w-[42vw] items-center justify-center"
       >
         <img
-          src="/mega-utilidades-logo.jpeg"
+          src="/mega-utilidades-logo.jpeg?v=2"
           alt="Mega Utilidades"
           className="max-h-11 max-w-[min(42vw,220px)] object-contain"
         />
