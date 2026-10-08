@@ -65,11 +65,9 @@ export type Database = {
           image_url: string | null
           images: string[]
           name: string
-          offer_hash: string | null
           old_price: number | null
           position: number
           price: number
-          product_hash: string | null
         }
         Insert: {
           created_at?: string
@@ -79,11 +77,9 @@ export type Database = {
           image_url?: string | null
           images?: string[]
           name: string
-          offer_hash?: string | null
           old_price?: number | null
           position?: number
           price?: number
-          product_hash?: string | null
         }
         Update: {
           created_at?: string
@@ -93,44 +89,36 @@ export type Database = {
           image_url?: string | null
           images?: string[]
           name?: string
-          offer_hash?: string | null
           old_price?: number | null
           position?: number
           price?: number
-          product_hash?: string | null
         }
         Relationships: []
       }
       site_settings: {
         Row: {
-          brand_name: string
           footer_text: string | null
           hero_image_url: string | null
           id: number
           logo_url: string | null
-          logo_display: "text" | "image" | "both"
           payment_logo_url: string | null
           pix_logo_url: string | null
           updated_at: string
         }
         Insert: {
-          brand_name?: string
           footer_text?: string | null
           hero_image_url?: string | null
           id?: number
           logo_url?: string | null
-          logo_display?: "text" | "image" | "both"
           payment_logo_url?: string | null
           pix_logo_url?: string | null
           updated_at?: string
         }
         Update: {
-          brand_name?: string
           footer_text?: string | null
           hero_image_url?: string | null
           id?: number
           logo_url?: string | null
-          logo_display?: "text" | "image" | "both"
           payment_logo_url?: string | null
           pix_logo_url?: string | null
           updated_at?: string
@@ -160,7 +148,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      is_product_admin: { Args: never; Returns: boolean }
       admin_exists: { Args: never; Returns: boolean }
       claim_admin: { Args: never; Returns: boolean }
       has_role: {

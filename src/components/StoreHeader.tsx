@@ -25,8 +25,8 @@ export function StoreHeader() {
   const achados = t ? produtos.filter((p) => norm(p.name).includes(t)) : [];
   const qtd = useCart().items.reduce((s, i) => s + i.qty, 0);
   return (
-    <header className="store-header sticky top-0 z-10 grid h-[72px] grid-cols-[1fr_auto_1fr] items-center bg-black px-4 text-[#edbd32] shadow-sm">
-      <div className="flex items-center justify-self-start gap-5">
+    <header className="sticky top-0 z-10 flex h-[72px] items-center justify-between bg-header px-4 shadow-sm">
+      <div className="flex items-center gap-5 text-header-foreground">
         <button
           aria-label="Abrir menu"
           onClick={() => setMenu(true)}
@@ -55,18 +55,15 @@ export function StoreHeader() {
           <Search className="size-7" strokeWidth={2.4} />
         </button>
       </div>
-      <Link
-        to="/"
-        aria-label="Mega Utilidades"
-        className="flex min-w-0 max-w-[42vw] items-center justify-center"
-      >
-        <img
-          src="/mega-utilidades-logo.jpeg?v=2"
-          alt="Mega Utilidades"
-          className="max-h-11 max-w-[min(42vw,220px)] object-contain"
-        />
+      <Link to="/" aria-label="Mega Utilidades">
+        <span
+          className="text-xl font-extrabold uppercase tracking-tight text-header-foreground"
+          style={{ fontFamily: "Bebas Neue, sans-serif" }}
+        >
+          Mega Utilidades
+        </span>
       </Link>
-      <div className="flex items-center justify-self-end gap-5">
+      <div className="flex items-center gap-5 text-header-foreground">
         <User className="size-7" strokeWidth={2.4} />
         <button
           aria-label="Abrir sacola"
@@ -74,7 +71,7 @@ export function StoreHeader() {
           className="relative grid size-8 place-items-center"
         >
           <ShoppingBag className="size-7" strokeWidth={2.4} />
-          <span className="absolute -bottom-1 -right-1 grid h-4 w-4 place-items-center rounded-full bg-[#edbd32] text-[9px] font-bold text-[#1d1d1d]">
+          <span className="absolute -bottom-1 -right-1 grid h-4 w-4 place-items-center rounded-full bg-header-foreground text-[9px] font-bold text-background">
             {qtd}
           </span>
         </button>

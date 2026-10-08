@@ -2,19 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
-import {
-  Package,
-  Settings,
-  LogOut,
-  Trash2,
-  Store,
-  Pencil,
-  ShoppingBag,
-  Download,
-  Mail,
-  Hash,
-  Terminal,
-} from "lucide-react";
+import { Package, Settings, LogOut, Trash2, Store, Pencil, ShoppingBag, Download, Mail } from "lucide-react";
 import { enviarEmailPagamentoAprovado, enviarEmailStatus } from "@/lib/email.functions";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,15 +12,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Toaster } from "@/components/ui/sonner";
-import { Hashes } from "@/components/admin/Hashes";
-import { DebugConsole } from "@/components/admin/DebugConsole";
-import {
-  getBrandPresentation,
-  getLogoFileProblem,
-  prepareLogoUpload,
-  type LogoDisplay,
-} from "@/lib/brand-identity";
-import { resolveAdminAccess } from "@/lib/admin-access";
 
 export const Route = createFileRoute("/admin")({
   ssr: false,
@@ -52,98 +31,63 @@ export const Route = createFileRoute("/admin")({
 
 function AdminPage() {
   const [session, setSession] = useState<Session | null>(null);
+  const [ready, setReady] = useState(false);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const [adminCheckError, setAdminCheckError] = useState(false);
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
-    }).catch(() => {
-      // Auth can be temporarily unavailable. Keep the login form usable.
-      setSession(null);
+      setReady(true);
     });
     return () => data.subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
-    if (!session) {
-      setIsAdmin(null);
-      setAdminCheckError(false);
-      return;
-    }
-    let active = true;
-    setIsAdmin(null);
-    setAdminCheckError(false);
-    resolveAdminAccess(supabase).then((result) => {
-      if (active) {
-        setIsAdmin(result.access);
-        setAdminCheckError(result.error);
-      }
-    });
-    return () => {
-      active = false;
-    };
+    if (!session) { setIsAdmin(null); return; }
+    supabase.rpc("claim_admin").then(({ data }) => setIsAdmin(!!data));
   }, [session]);
-
-  const loginNotice = session
-    ? adminCheckError
-      ? "Não foi possível confirmar o acesso agora. Você pode tentar entrar novamente."
-      : isAdmin === false
-        ? "Esta conta não tem acesso de administrador. Entre com outra conta administradora."
-        : "Verificando o acesso desta conta. Você também pode entrar com outra conta."
-    : undefined;
 
   return (
     <>
       <Toaster />
-      {session && isAdmin ? (
-        <Dashboard email={session.user.email ?? ""} />
+      {!ready ? null : !session ? (
+        <Login />
+      ) : isAdmin === null ? (
+        <p className="p-8 text-center text-muted-foreground">Carregando…</p>
+      ) : !isAdmin ? (
+        <div className="p-8 text-center">
+          <p className="mb-4">Esta conta não tem acesso de administrador.</p>
+          <Button onClick={() => supabase.auth.signOut()}>Sair</Button>
+        </div>
       ) : (
-        <Login
-          notice={loginNotice}
-          onSignOut={session ? () => supabase.auth.signOut() : undefined}
-          onSessionReceived={setSession}
-        />
+        <Dashboard email={session.user.email ?? ""} />
       )}
     </>
   );
 }
 
-function Login({
-  notice,
-  onSignOut,
-  onSessionReceived,
-}: {
-  notice?: string | undefined;
-  onSignOut?: (() => void | Promise<unknown>) | undefined;
-  onSessionReceived: (session: Session) => void;
-}) {
+function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const { data: hasAdmin } = useQuery({
+    queryKey: ["admin_exists"],
+    queryFn: async () => (await supabase.rpc("admin_exists")).data ?? false,
+  });
+  const firstAccess = hasAdmin === false;
+
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (password.length < 6) return void toast.error("A senha precisa ter pelo menos 6 caracteres");
     setLoading(true);
     const emailNormalizado = email.trim().replace(/\s+/g, "").toLowerCase();
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email: emailNormalizado, password });
-      if (error) {
-        toast.error("Não foi possível entrar. Confira o e-mail e a senha.");
-        return;
-      }
-      if (!data.session) {
-        toast.error("O login não retornou uma sessão válida. Tente novamente.");
-        return;
-      }
-      // The session effect performs the single authorization check for both
-      // restored sessions and newly authenticated users.
-      onSessionReceived(data.session);
-    } catch {
-      toast.error("Não foi possível confirmar o acesso agora. Tente novamente.");
-    } finally {
-      setLoading(false);
+    const { error } = firstAccess
+      ? await supabase.auth.signUp({ email: emailNormalizado, password, options: { emailRedirectTo: window.location.origin + "/admin" } })
+      : await supabase.auth.signInWithPassword({ email: emailNormalizado, password });
+    setLoading(false);
+    if (error) {
+      toast.error(firstAccess ? error.message : "Não foi possível entrar. Confira o e-mail e a senha.");
     }
   }
 
@@ -152,9 +96,8 @@ function Login({
       <form onSubmit={submit} className="w-full max-w-sm space-y-4 rounded-xl bg-background p-6 shadow-lg">
         <h1 className="text-center text-2xl font-extrabold text-primary">Painel Admin</h1>
         <p className="text-center text-sm text-muted-foreground">
-          Entre com o e-mail e a senha da conta administradora.
+          {firstAccess ? "Primeiro acesso: crie seu e-mail e senha de administrador." : "Entre com seu e-mail e senha."}
         </p>
-        {notice && <p role="status" className="rounded-md bg-muted p-3 text-sm text-muted-foreground">{notice}</p>}
         <div className="space-y-2">
           <Label htmlFor="email">E-mail</Label>
           <Input id="email" type="email" autoComplete="email" required maxLength={255} value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -164,20 +107,15 @@ function Login({
           <Input id="senha" type="password" autoComplete="current-password" required minLength={6} maxLength={72} value={password} onChange={(e) => setPassword(e.target.value)} />
         </div>
         <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? "Aguarde…" : "Entrar"}
+          {loading ? "Aguarde…" : firstAccess ? "Criar acesso e entrar" : "Entrar"}
         </Button>
-        {onSignOut && (
-          <Button type="button" variant="outline" className="w-full" onClick={onSignOut}>
-            Sair desta conta
-          </Button>
-        )}
       </form>
     </div>
   );
 }
 
 function Dashboard({ email }: { email: string }) {
-  const [tab, setTab] = useState<"produtos" | "pedidos" | "hashes" | "debug" | "config" | "contato">("produtos");
+  const [tab, setTab] = useState<"produtos" | "pedidos" | "config" | "contato">("produtos");
   const qc = useQueryClient();
   async function logout() {
     qc.clear();
@@ -185,9 +123,6 @@ function Dashboard({ email }: { email: string }) {
   }
   const item = (k: typeof tab, label: string, Icon: typeof Package) => (
     <button
-      type="button"
-      aria-label={label}
-      title={label}
       onClick={() => setTab(k)}
       className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${tab === k ? "bg-primary text-primary-foreground" : "text-sidebar-foreground hover:bg-sidebar-accent"}`}
     >
@@ -199,8 +134,6 @@ function Dashboard({ email }: { email: string }) {
       <aside className="flex w-16 shrink-0 flex-col gap-2 border-r bg-sidebar p-2 sm:w-56 sm:p-4">
         <p className="mb-4 hidden text-lg font-extrabold text-primary sm:block">Admin</p>
         {item("produtos", "Produtos", Package)}
-        {item("hashes", "Hashes", Hash)}
-        {item("debug", "Debug Console", Terminal)}
         {item("pedidos", "Pedidos", ShoppingBag)}
         {item("config", "Configuração", Settings)}
         {item("contato", "Contato", Mail)}
@@ -214,21 +147,7 @@ function Dashboard({ email }: { email: string }) {
           <p className="hidden truncate text-xs text-muted-foreground sm:block">{email}</p>
         </div>
       </aside>
-      <main className="min-w-0 flex-1 p-4 sm:p-8">
-        {tab === "produtos" ? (
-          <Produtos />
-        ) : tab === "hashes" ? (
-          <Hashes />
-        ) : tab === "debug" ? (
-          <DebugConsole />
-        ) : tab === "pedidos" ? (
-          <Pedidos />
-        ) : tab === "contato" ? (
-          <Contato />
-        ) : (
-          <Config />
-        )}
-      </main>
+      <main className="min-w-0 flex-1 p-4 sm:p-8">{tab === "produtos" ? <Produtos /> : tab === "pedidos" ? <Pedidos /> : tab === "contato" ? <Contato /> : <Config />}</main>
     </div>
   );
 }
@@ -380,7 +299,7 @@ function Config() {
     queryFn: async () => (await supabase.from("site_settings").select("*").eq("id", 1).maybeSingle()).data,
   });
 
-  async function save(patch: { logo_url?: string | null; brand_name?: string; logo_display?: LogoDisplay; payment_logo_url?: string | null; pix_logo_url?: string | null; hero_image_url?: string | null; footer_text?: string | null }) {
+  async function save(patch: { logo_url?: string | null; payment_logo_url?: string | null; pix_logo_url?: string | null; hero_image_url?: string | null; footer_text?: string | null }) {
     setSaving(true);
     const { error } = await supabase.from("site_settings").upsert({
       id: 1,
@@ -393,13 +312,9 @@ function Config() {
       updated_at: new Date().toISOString(),
     });
     setSaving(false);
-    if (error) {
-      toast.error("Não foi possível salvar a configuração.");
-      return false;
-    }
-    toast.success("Configuração salva.");
+    if (error) return void toast.error("Não foi possível salvar");
+    toast.success("Imagem atualizada");
     qc.invalidateQueries({ queryKey: ["site_settings"] });
-    return true;
   }
 
   const bloco = (titulo: string, key: "logo_url" | "payment_logo_url" | "pix_logo_url" | "hero_image_url", max: number, remover: string) => (
@@ -426,7 +341,7 @@ function Config() {
   return (
     <div className="max-w-xl space-y-6">
       <h1 className="text-2xl font-extrabold">Configuração</h1>
-      <BrandIdentity settings={settings} saving={saving} onSave={save} />
+      {bloco("Logo do cabeçalho (substitui a estrela e o nome)", "logo_url", 600, "Remover logo")}
       {bloco("Imagem principal (aparece abaixo do cabeçalho)", "hero_image_url", 1600, "Remover imagem principal")}
       {bloco("Bandeira (formas de pagamento no rodapé)", "payment_logo_url", 900, "Remover bandeira")}
       {bloco("Pagamento Pix (imagem exibida ao cliente)", "pix_logo_url", 600, "Remover imagem do Pix")}
@@ -443,167 +358,6 @@ function Config() {
       </div>
     </div>
   );
-}
-
-type BrandSettingsInput = {
-  brand_name?: string | null;
-  logo_url?: string | null;
-  logo_display?: LogoDisplay | null;
-};
-
-function BrandIdentity({
-  settings,
-  saving,
-  onSave,
-}: {
-  settings: BrandSettingsInput | null | undefined;
-  saving: boolean;
-  onSave: (patch: { logo_url?: string | null; brand_name?: string; logo_display?: LogoDisplay }) => Promise<boolean>;
-}) {
-  const [name, setName] = useState(settings?.brand_name ?? "Mega Utilidades");
-  const [mode, setMode] = useState<LogoDisplay>(settings?.logo_display ?? "both");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [removingLogo, setRemovingLogo] = useState(false);
-  const [preparing, setPreparing] = useState(false);
-  const presentation = getBrandPresentation({ brand_name: name, logo_url: previewUrl ?? (removingLogo ? null : settings?.logo_url), logo_display: mode });
-
-  useEffect(() => {
-    setName(settings?.brand_name ?? "Mega Utilidades");
-    setMode(settings?.logo_display ?? "both");
-  }, [settings?.brand_name, settings?.logo_display]);
-
-  useEffect(() => () => {
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-  }, [previewUrl]);
-
-  async function selectLogo(file: File | undefined) {
-    if (!file) return;
-    const problem = getLogoFileProblem(file);
-    if (problem) return void toast.error(problem);
-    setPreparing(true);
-    try {
-      const readyFile = await prepareLogoUpload(file);
-      setSelectedFile(readyFile);
-      setPreviewUrl(URL.createObjectURL(readyFile));
-      setMode("image");
-      setRemovingLogo(false);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Não foi possível abrir esta imagem.");
-    } finally {
-      setPreparing(false);
-    }
-  }
-
-  async function submit() {
-    const brandName = name.trim();
-    if (!brandName) return void toast.error("Informe o nome da marca.");
-    if (brandName.length > 60) return void toast.error("O nome da marca pode ter até 60 caracteres.");
-
-    let uploadedPath: string | null = null;
-    let logoUrl = settings?.logo_url ?? null;
-    if (selectedFile) {
-      const extension = selectedFile.type === "image/png" ? "png" : "jpg";
-      uploadedPath = `brand/${crypto.randomUUID()}.${extension}`;
-      const { error } = await supabase.storage.from("brand-assets").upload(uploadedPath, selectedFile, {
-        cacheControl: "31536000",
-        contentType: selectedFile.type,
-        upsert: false,
-      });
-      if (error) return void toast.error("Não foi possível enviar o logotipo. Tente novamente.");
-      logoUrl = supabase.storage.from("brand-assets").getPublicUrl(uploadedPath).data.publicUrl;
-    }
-    if (removingLogo) logoUrl = null;
-
-    const saved = await onSave({
-      brand_name: brandName,
-      logo_display: selectedFile ? "image" : mode,
-      ...(selectedFile || removingLogo ? { logo_url: logoUrl } : {}),
-    });
-    if (!saved) {
-      if (uploadedPath) await supabase.storage.from("brand-assets").remove([uploadedPath]);
-      return;
-    }
-
-    const previousPath = getBrandAssetPath(settings?.logo_url);
-    if (previousPath && (uploadedPath || removingLogo)) {
-      const { error } = await supabase.storage.from("brand-assets").remove([previousPath]);
-      if (error) toast.error("A marca foi atualizada, mas o arquivo anterior não pôde ser removido.");
-    }
-    setSelectedFile(null);
-    setPreviewUrl(null);
-    setRemovingLogo(false);
-  }
-
-  return (
-    <section className="space-y-5 rounded-xl bg-background p-4 shadow-sm sm:p-6" aria-labelledby="brand-title">
-      <div>
-        <h2 id="brand-title" className="text-lg font-bold">Identidade da marca</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Defina como o nome e o logotipo aparecem no cabeçalho da loja.</p>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="brand-name">Nome da marca</Label>
-        <Input id="brand-name" value={name} maxLength={60} onChange={(event) => setName(event.target.value)} disabled={saving} />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="brand-logo">Logotipo</Label>
-        <Input
-          id="brand-logo"
-          type="file"
-          accept=".png,.svg,.jpg,.jpeg,image/png,image/svg+xml,image/jpeg"
-          disabled={saving || preparing}
-          onChange={(event) => void selectLogo(event.target.files?.[0])}
-        />
-        <p className="text-xs text-muted-foreground">PNG, SVG ou JPG, até 2 MB. Imagens SVG são convertidas para PNG ao enviar.</p>
-      </div>
-      <div className="flex min-h-24 items-center justify-center rounded-lg border bg-header px-4 py-3">
-        <div className="flex max-w-full items-center justify-center gap-2 text-header-foreground">
-          {presentation.showImage && presentation.logoUrl && <img src={presentation.logoUrl} alt={presentation.showText ? "" : presentation.name} className="max-h-12 max-w-40 object-contain" />}
-          {presentation.showText && <span className="max-w-full truncate text-lg font-extrabold uppercase" style={{ fontFamily: "'Bebas Neue', sans-serif" }}>{presentation.name}</span>}
-        </div>
-      </div>
-      <fieldset className="space-y-2">
-        <legend className="text-sm font-medium">Exibição no cabeçalho</legend>
-        <div className="grid gap-2 sm:grid-cols-3">
-          {([
-            ["text", "Somente texto"],
-            ["image", "Somente imagem"],
-            ["both", "Texto e imagem"],
-          ] as const).map(([value, label]) => (
-            <label key={value} className={`flex cursor-pointer items-center gap-2 rounded-lg border p-3 text-sm ${mode === value ? "border-primary bg-primary/5" : "border-border"}`}>
-              <input
-                type="radio"
-                name="logo-display"
-                value={value}
-                checked={mode === value}
-                onChange={() => setMode(selectedFile ? "image" : value)}
-                disabled={saving || Boolean(selectedFile)}
-              />
-              {label}
-            </label>
-          ))}
-        </div>
-      </fieldset>
-      {settings?.logo_url && !removingLogo && (
-        <Button type="button" variant="outline" onClick={() => { setSelectedFile(null); setPreviewUrl(null); setRemovingLogo(true); }} disabled={saving || preparing}>
-          Remover logotipo
-        </Button>
-      )}
-      {removingLogo && <p className="text-sm text-muted-foreground">O logotipo será removido ao salvar.</p>}
-      <div>
-        <Button type="button" onClick={() => void submit()} disabled={saving || preparing}>
-          {preparing ? "Preparando imagem…" : saving ? "Salvando…" : "Salvar identidade"}
-        </Button>
-      </div>
-    </section>
-  );
-}
-
-function getBrandAssetPath(url: string | null | undefined) {
-  if (!url) return null;
-  const marker = "/storage/v1/object/public/brand-assets/";
-  const index = url.indexOf(marker);
-  return index >= 0 ? url.slice(index + marker.length) || null : null;
 }
 
 function formatBRL(v: number) {
