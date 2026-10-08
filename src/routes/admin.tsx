@@ -590,7 +590,7 @@ function Config() {
           const { error } = await supabase.storage
             .from("products")
             .upload(path, blob, { contentType: blob.type, cacheControl: "31536000" });
-          if (error) return alert("Não foi possível enviar a imagem.");
+          if (error) return void toast.error("Não foi possível enviar a imagem.");
           await save({ [key]: supabase.storage.from("products").getPublicUrl(path).data.publicUrl });
         }}
       />
