@@ -26,7 +26,7 @@ export function StoreHeader() {
   const qtd = useCart().items.reduce((s, i) => s + i.qty, 0);
   return (
     <header className="sticky top-0 z-10 flex h-[72px] items-center justify-between bg-black px-4 shadow-sm">
-      <div className="flex items-center gap-5 text-white">
+      <div className="flex items-center gap-5 text-header">
         <button
           aria-label="Abrir menu"
           onClick={() => setMenu(true)}
@@ -62,7 +62,7 @@ export function StoreHeader() {
       >
         <img src="/logo-mega-utilidades.jpeg" alt="" className="h-auto w-28 sm:w-40 lg:w-48" />
       </Link>
-      <div className="flex items-center gap-5 text-white">
+      <div className="flex items-center gap-5 text-header">
         <User className="size-7" strokeWidth={2.4} />
         <button
           aria-label="Abrir sacola"
