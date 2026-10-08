@@ -25,8 +25,8 @@ export function StoreHeader() {
   const achados = t ? produtos.filter((p) => norm(p.name).includes(t)) : [];
   const qtd = useCart().items.reduce((s, i) => s + i.qty, 0);
   return (
-    <header className="sticky top-0 z-10 flex h-[72px] items-center justify-between bg-header px-4 shadow-sm">
-      <div className="flex items-center gap-5 text-header-foreground">
+    <header className="sticky top-0 z-10 flex h-[72px] items-center justify-between bg-black px-4 shadow-sm">
+      <div className="flex items-center gap-5 text-white">
         <button
           aria-label="Abrir menu"
           onClick={() => setMenu(true)}
@@ -55,15 +55,14 @@ export function StoreHeader() {
           <Search className="size-7" strokeWidth={2.4} />
         </button>
       </div>
-      <Link to="/" aria-label="Mega Utilidades">
-        <span
-          className="text-xl font-extrabold uppercase tracking-tight text-header-foreground"
-          style={{ fontFamily: "Bebas Neue, sans-serif" }}
-        >
-          Mega Utilidades
-        </span>
+      <Link
+        to="/"
+        aria-label="Mega Utilidades"
+        className="absolute left-1/2 -translate-x-1/2 shrink-0"
+      >
+        <img src="/logo-mega-utilidades.jpeg" alt="" className="h-auto w-28 sm:w-40 lg:w-48" />
       </Link>
-      <div className="flex items-center gap-5 text-header-foreground">
+      <div className="flex items-center gap-5 text-white">
         <User className="size-7" strokeWidth={2.4} />
         <button
           aria-label="Abrir sacola"
@@ -71,7 +70,7 @@ export function StoreHeader() {
           className="relative grid size-8 place-items-center"
         >
           <ShoppingBag className="size-7" strokeWidth={2.4} />
-          <span className="absolute -bottom-1 -right-1 grid h-4 w-4 place-items-center rounded-full bg-header-foreground text-[9px] font-bold text-background">
+          <span className="absolute -bottom-1 -right-1 grid h-4 w-4 place-items-center rounded-full bg-white text-[9px] font-bold text-black">
             {qtd}
           </span>
         </button>
