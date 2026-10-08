@@ -1,14 +1,12 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Search, User, ShoppingBag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cart, useCart } from "@/lib/cart";
 import { CartDrawer } from "@/components/CartDrawer";
-import { getBrandPresentation } from "@/lib/brand-identity";
 
 export function StoreHeader() {
-  const queryClient = useQueryClient();
   const [menu, setMenu] = useState(false);
   const [busca, setBusca] = useState(false);
   const [termo, setTermo] = useState("");
@@ -26,36 +24,9 @@ export function StoreHeader() {
   const t = norm(termo.trim());
   const achados = t ? produtos.filter((p) => norm(p.name).includes(t)) : [];
   const qtd = useCart().items.reduce((s, i) => s + i.qty, 0);
-  const { data: settings } = useQuery({
-    queryKey: ["site_settings"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("site_settings")
-        .select("brand_name,logo_url,logo_display")
-        .eq("id", 1)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-  });
-  useEffect(() => {
-    const channel = supabase
-      .channel("public-site-settings")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "site_settings" },
-        () => void queryClient.invalidateQueries({ queryKey: ["site_settings"] }),
-      )
-      .subscribe();
-
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [queryClient]);
-  const brand = getBrandPresentation(settings);
   return (
-    <header className="sticky top-0 z-10 grid h-[72px] grid-cols-[1fr_auto_1fr] items-center bg-header px-4 shadow-sm">
-      <div className="flex items-center justify-self-start gap-5 text-header-foreground">
+    <header className="sticky top-0 z-10 grid h-[72px] grid-cols-[1fr_auto_1fr] items-center bg-[#1d1d1d] px-4 text-[#edbd32] shadow-sm">
+      <div className="flex items-center justify-self-start gap-5">
         <button
           aria-label="Abrir menu"
           onClick={() => setMenu(true)}
@@ -86,26 +57,16 @@ export function StoreHeader() {
       </div>
       <Link
         to="/"
-        aria-label={brand.name}
-        className="flex min-w-0 max-w-[42vw] items-center justify-center text-header-foreground"
+        aria-label="Mega Utilidades"
+        className="flex min-w-0 max-w-[42vw] items-center justify-center"
       >
-        {brand.showImage && brand.logoUrl && (
-          <img
-            src={brand.logoUrl}
-            alt={brand.showText ? "" : brand.name}
-            className="max-h-10 max-w-[min(38vw,180px)] object-contain sm:max-h-11 sm:max-w-[min(34vw,200px)]"
-          />
-        )}
-        {brand.showText && (
-          <span
-            className="truncate text-[clamp(0.8rem,4vw,1.25rem)] font-extrabold uppercase tracking-tight"
-            style={{ fontFamily: "Bebas Neue, sans-serif" }}
-          >
-            {brand.name}
-          </span>
-        )}
+        <img
+          src="/mega-utilidades-logo.jpeg"
+          alt="Mega Utilidades"
+          className="max-h-11 max-w-[min(42vw,220px)] object-contain"
+        />
       </Link>
-      <div className="flex items-center justify-self-end gap-5 text-header-foreground">
+      <div className="flex items-center justify-self-end gap-5">
         <User className="size-7" strokeWidth={2.4} />
         <button
           aria-label="Abrir sacola"
@@ -113,7 +74,7 @@ export function StoreHeader() {
           className="relative grid size-8 place-items-center"
         >
           <ShoppingBag className="size-7" strokeWidth={2.4} />
-          <span className="absolute -bottom-1 -right-1 grid h-4 w-4 place-items-center rounded-full bg-header-foreground text-[9px] font-bold text-background">
+          <span className="absolute -bottom-1 -right-1 grid h-4 w-4 place-items-center rounded-full bg-[#edbd32] text-[9px] font-bold text-[#1d1d1d]">
             {qtd}
           </span>
         </button>
