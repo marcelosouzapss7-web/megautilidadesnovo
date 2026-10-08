@@ -25,7 +25,7 @@ export function StoreHeader() {
   const achados = t ? produtos.filter((p) => norm(p.name).includes(t)) : [];
   const qtd = useCart().items.reduce((s, i) => s + i.qty, 0);
   return (
-    <header className="sticky top-0 z-10 grid h-[72px] grid-cols-[1fr_auto_1fr] items-center bg-[#1d1d1d] px-4 text-[#edbd32] shadow-sm">
+    <header className="sticky top-0 z-10 grid h-[72px] grid-cols-[1fr_auto_1fr] items-center bg-black px-4 text-[#edbd32] shadow-sm">
       <div className="flex items-center justify-self-start gap-5">
         <button
           aria-label="Abrir menu"

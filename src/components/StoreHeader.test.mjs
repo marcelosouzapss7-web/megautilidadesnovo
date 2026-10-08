@@ -12,4 +12,8 @@ describe("store header logo", () => {
     expect(header).toContain('alt="Mega Utilidades"');
     expect(header).not.toContain("brand.showText");
   });
+
+  it("uses a black background for the header", () => {
+    expect(header).toMatch(/<header className="[^"]*\bbg-black\b/);
+  });
 });
