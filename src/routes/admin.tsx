@@ -2,11 +2,26 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
-import { Package, Settings, LogOut, Trash2, Store, Pencil, ShoppingBag, Download, Mail } from "lucide-react";
+import {
+  Package,
+  Settings,
+  LogOut,
+  Trash2,
+  Store,
+  Pencil,
+  ShoppingBag,
+  Download,
+  Mail,
+} from "lucide-react";
 import { enviarEmailPagamentoAprovado, enviarEmailStatus } from "@/lib/email.functions";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { fileToDataUrl } from "@/lib/image";
+import {
+  productImagePathFromPublicUrl,
+  uploadProductImage,
+  validateProductImage,
+} from "@/lib/product-images.mjs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,7 +59,10 @@ function AdminPage() {
   }, []);
 
   useEffect(() => {
-    if (!session) { setIsAdmin(null); return; }
+    if (!session) {
+      setIsAdmin(null);
+      return;
+    }
     supabase.rpc("claim_admin").then(({ data }) => setIsAdmin(!!data));
   }, [session]);
 
@@ -83,28 +101,59 @@ function Login() {
     setLoading(true);
     const emailNormalizado = email.trim().replace(/\s+/g, "").toLowerCase();
     const { error } = firstAccess
-      ? await supabase.auth.signUp({ email: emailNormalizado, password, options: { emailRedirectTo: window.location.origin + "/admin" } })
+      ? await supabase.auth.signUp({
+          email: emailNormalizado,
+          password,
+          options: { emailRedirectTo: window.location.origin + "/admin" },
+        })
       : await supabase.auth.signInWithPassword({ email: emailNormalizado, password });
     setLoading(false);
     if (error) {
-      toast.error(firstAccess ? error.message : "Não foi possível entrar. Confira o e-mail e a senha.");
+      toast.error(
+        firstAccess ? error.message : "Não foi possível entrar. Confira o e-mail e a senha.",
+      );
     }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted px-4" style={{ fontFamily: "Montserrat, sans-serif" }}>
-      <form onSubmit={submit} className="w-full max-w-sm space-y-4 rounded-xl bg-background p-6 shadow-lg">
+    <div
+      className="flex min-h-screen items-center justify-center bg-muted px-4"
+      style={{ fontFamily: "Montserrat, sans-serif" }}
+    >
+      <form
+        onSubmit={submit}
+        className="w-full max-w-sm space-y-4 rounded-xl bg-background p-6 shadow-lg"
+      >
         <h1 className="text-center text-2xl font-extrabold text-primary">Painel Admin</h1>
         <p className="text-center text-sm text-muted-foreground">
-          {firstAccess ? "Primeiro acesso: crie seu e-mail e senha de administrador." : "Entre com seu e-mail e senha."}
+          {firstAccess
+            ? "Primeiro acesso: crie seu e-mail e senha de administrador."
+            : "Entre com seu e-mail e senha."}
         </p>
         <div className="space-y-2">
           <Label htmlFor="email">E-mail</Label>
-          <Input id="email" type="email" autoComplete="email" required maxLength={255} value={email} onChange={(e) => setEmail(e.target.value)} />
+          <Input
+            id="email"
+            type="email"
+            autoComplete="email"
+            required
+            maxLength={255}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="senha">Senha</Label>
-          <Input id="senha" type="password" autoComplete="current-password" required minLength={6} maxLength={72} value={password} onChange={(e) => setPassword(e.target.value)} />
+          <Input
+            id="senha"
+            type="password"
+            autoComplete="current-password"
+            required
+            minLength={6}
+            maxLength={72}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
         </div>
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Aguarde…" : firstAccess ? "Criar acesso e entrar" : "Entrar"}
@@ -138,16 +187,33 @@ function Dashboard({ email }: { email: string }) {
         {item("config", "Configuração", Settings)}
         {item("contato", "Contato", Mail)}
         <div className="mt-auto space-y-2">
-          <Link to="/" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent">
-            <Store className="h-5 w-5 shrink-0" /> <span className="hidden sm:inline">Ver loja</span>
+          <Link
+            to="/"
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent"
+          >
+            <Store className="h-5 w-5 shrink-0" />{" "}
+            <span className="hidden sm:inline">Ver loja</span>
           </Link>
-          <button onClick={logout} className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent">
+          <button
+            onClick={logout}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent"
+          >
             <LogOut className="h-5 w-5 shrink-0" /> <span className="hidden sm:inline">Sair</span>
           </button>
           <p className="hidden truncate text-xs text-muted-foreground sm:block">{email}</p>
         </div>
       </aside>
-      <main className="min-w-0 flex-1 p-4 sm:p-8">{tab === "produtos" ? <Produtos /> : tab === "pedidos" ? <Pedidos /> : tab === "contato" ? <Contato /> : <Config />}</main>
+      <main className="min-w-0 flex-1 p-4 sm:p-8">
+        {tab === "produtos" ? (
+          <Produtos />
+        ) : tab === "pedidos" ? (
+          <Pedidos />
+        ) : tab === "contato" ? (
+          <Contato />
+        ) : (
+          <Config />
+        )}
+      </main>
     </div>
   );
 }
@@ -157,14 +223,28 @@ function Produtos() {
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [oldPrice, setOldPrice] = useState("");
-  const [fotos, setFotos] = useState<(string | null)[]>([null, null, null, null]);
+  const [fotos, setFotos] = useState<({ url: string; file?: File; objectUrl?: string } | null)[]>([
+    null,
+    null,
+    null,
+    null,
+  ]);
   const [desc, setDesc] = useState("");
   const [temTamanhos, setTemTamanhos] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const { data: produtos = [] } = useQuery({
     queryKey: ["products"],
-    queryFn: async () => (await supabase.from("products").select("*").order("position", { ascending: true }).order("created_at", { ascending: false })).data ?? [],
+    queryFn: async () =>
+      (
+        await supabase
+          .from("products")
+          .select(
+            "id,name,price,old_price,description,has_sizes,images,image_url,position,created_at",
+          )
+          .order("position", { ascending: true })
+          .order("created_at", { ascending: false })
+      ).data ?? [],
   });
 
   function startEdit(p: (typeof produtos)[number]) {
@@ -175,12 +255,21 @@ function Produtos() {
     setDesc(p.description ?? "");
     setTemTamanhos((p as any).has_sizes !== false);
     const imgs = p.images?.length ? p.images : p.image_url ? [p.image_url] : [];
-    setFotos([0, 1, 2, 3].map((i) => imgs[i] ?? null));
+    setFotos([0, 1, 2, 3].map((i) => (imgs[i] ? { url: imgs[i] } : null)));
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function cancelEdit(form?: HTMLFormElement | null) {
-    setEditId(null); setName(""); setPrice(""); setOldPrice(""); setFotos([null, null, null, null]); setDesc(""); setTemTamanhos(true);
+    fotos.forEach((foto) => {
+      if (foto?.objectUrl) URL.revokeObjectURL(foto.objectUrl);
+    });
+    setEditId(null);
+    setName("");
+    setPrice("");
+    setOldPrice("");
+    setFotos([null, null, null, null]);
+    setDesc("");
+    setTemTamanhos(true);
     form?.reset();
   }
 
@@ -191,14 +280,63 @@ function Produtos() {
     const antigo = oldPrice.trim() ? Number(oldPrice.replace(",", ".")) : null;
     if (antigo !== null && isNaN(antigo)) return void toast.error("Valor 'De' inválido");
     setSaving(true);
-    const base = { name: name.trim().slice(0, 200), price: valor, old_price: antigo, description: desc.trim() || null, has_sizes: temTamanhos } as any;
-    const images = fotos.filter((f): f is string => !!f);
-    const dados = { ...base, images, image_url: images[0] ?? null };
-    const { error } = editId
-      ? await supabase.from("products").update(dados).eq("id", editId)
-      : await supabase.from("products").insert(dados);
+    const productId = editId ?? crypto.randomUUID();
+    const uploaded: string[] = [];
+    let error: { message?: string } | null = null;
+    try {
+      const images: (string | null)[] = [];
+      for (const foto of fotos) {
+        if (!foto) {
+          images.push(null);
+          continue;
+        }
+        if (!foto.file) {
+          images.push(foto.url);
+          continue;
+        }
+        const result = await uploadProductImage(supabase, productId, foto.file);
+        uploaded.push(result.url);
+        images.push(result.url);
+      }
+      const urls = images.filter((url): url is string => Boolean(url));
+      const dados = {
+        id: productId,
+        name: name.trim().slice(0, 200),
+        price: valor,
+        old_price: antigo,
+        description: desc.trim() || "",
+        has_sizes: temTamanhos,
+        images: urls,
+        image_url: urls[0] ?? "",
+      };
+      const result = editId
+        ? await supabase.from("products").update(dados).eq("id", editId)
+        : await supabase.from("products").insert(dados);
+      error = result.error;
+      if (!error) {
+        const previousUrls = fotos
+          .map((foto) => foto?.url)
+          .filter((url): url is string => Boolean(url));
+        const removedPaths = previousUrls
+          .filter((url) => !urls.includes(url))
+          .map((url) => productImagePathFromPublicUrl(url, import.meta.env["VITE_SUPABASE_URL"]))
+          .filter((path): path is string => Boolean(path));
+        if (removedPaths.length) await supabase.storage.from("products").remove(removedPaths);
+      } else if (uploaded.length) {
+        const paths = uploaded
+          .map((url) => productImagePathFromPublicUrl(url, import.meta.env["VITE_SUPABASE_URL"]))
+          .filter((path): path is string => Boolean(path));
+        if (paths.length) await supabase.storage.from("products").remove(paths);
+      }
+    } catch (uploadError) {
+      error = uploadError as { message?: string };
+      const paths = uploaded
+        .map((url) => productImagePathFromPublicUrl(url, import.meta.env["VITE_SUPABASE_URL"]))
+        .filter((path): path is string => Boolean(path));
+      if (paths.length) await supabase.storage.from("products").remove(paths);
+    }
     setSaving(false);
-    if (error) return void toast.error("Não foi possível salvar");
+    if (error) return void toast.error(error.message ?? "Não foi possível salvar o produto");
     toast.success(editId ? "Produto atualizado" : "Produto adicionado");
     cancelEdit(e.target as HTMLFormElement);
     qc.invalidateQueries({ queryKey: ["products"] });
@@ -206,7 +344,20 @@ function Produtos() {
 
   async function remove(id: string) {
     if (!confirm("Excluir este produto?")) return;
-    await supabase.from("products").delete().eq("id", id);
+    const produto = produtos.find((p) => p.id === id);
+    const { error } = await supabase.from("products").delete().eq("id", id);
+    if (error) return void toast.error("Não foi possível excluir o produto");
+    const urls = [...(produto?.images ?? []), produto?.image_url].filter((url): url is string =>
+      Boolean(url),
+    );
+    const paths = [
+      ...new Set(
+        urls
+          .map((url) => productImagePathFromPublicUrl(url, import.meta.env["VITE_SUPABASE_URL"]))
+          .filter((path): path is string => Boolean(path)),
+      ),
+    ];
+    if (paths.length) await supabase.storage.from("products").remove(paths);
     if (editId === id) cancelEdit();
     qc.invalidateQueries({ queryKey: ["products"] });
   }
@@ -214,7 +365,10 @@ function Produtos() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-extrabold">Produtos</h1>
-      <form onSubmit={add} className="grid gap-4 rounded-xl bg-background p-4 shadow-sm sm:grid-cols-2">
+      <form
+        onSubmit={add}
+        className="grid gap-4 rounded-xl bg-background p-4 shadow-sm sm:grid-cols-2"
+      >
         {editId && <p className="font-bold text-primary sm:col-span-2">Editando produto</p>}
         <div className="space-y-2 sm:col-span-2">
           <Label>Nome do produto</Label>
@@ -222,11 +376,22 @@ function Produtos() {
         </div>
         <div className="space-y-2 sm:col-span-2">
           <Label>De: (R$) — valor antigo, opcional</Label>
-          <Input value={oldPrice} onChange={(e) => setOldPrice(e.target.value)} placeholder="199,99" inputMode="decimal" />
+          <Input
+            value={oldPrice}
+            onChange={(e) => setOldPrice(e.target.value)}
+            placeholder="199,99"
+            inputMode="decimal"
+          />
         </div>
         <div className="space-y-2">
           <Label>Preço (R$)</Label>
-          <Input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="69,89" required inputMode="decimal" />
+          <Input
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            placeholder="69,89"
+            required
+            inputMode="decimal"
+          />
         </div>
         <div className="space-y-2 sm:col-span-2">
           <Label>Fotos (até 4)</Label>
@@ -234,58 +399,128 @@ function Produtos() {
             {fotos.map((f, i) => (
               <div key={i} className="space-y-1">
                 <label className="relative flex aspect-[3/4] cursor-pointer items-center justify-center overflow-hidden rounded-lg border bg-muted text-xs text-muted-foreground">
-                  {f ? <img src={f} alt={`Foto ${i + 1}`} className="h-full w-full object-cover" /> : <span>Foto {i + 1}</span>}
-                  <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    const url = await fileToDataUrl(file);
-                    setFotos((prev) => prev.map((x, j) => (j === i ? url : x)));
-                    e.target.value = "";
-                  }} />
+                  {f ? (
+                    <img src={f.url} alt={`Foto ${i + 1}`} className="h-full w-full object-cover" />
+                  ) : (
+                    <span>Foto {i + 1}</span>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      try {
+                        validateProductImage(file);
+                        const objectUrl = URL.createObjectURL(file);
+                        setFotos((prev) => {
+                          if (prev[i]?.objectUrl) URL.revokeObjectURL(prev[i].objectUrl);
+                          return prev.map((x, j) =>
+                            j === i ? { url: objectUrl, objectUrl, file } : x,
+                          );
+                        });
+                      } catch (error) {
+                        toast.error(error instanceof Error ? error.message : "Arquivo inválido");
+                      }
+                      e.target.value = "";
+                    }}
+                  />
                 </label>
-                {f && <button type="button" className="w-full text-xs text-destructive" onClick={() => setFotos((prev) => prev.map((x, j) => (j === i ? null : x)))}>Remover</button>}
+                {f && (
+                  <button
+                    type="button"
+                    className="w-full text-xs text-destructive"
+                    onClick={() => {
+                      if (f.objectUrl) URL.revokeObjectURL(f.objectUrl);
+                      setFotos((prev) => prev.map((x, j) => (j === i ? null : x)));
+                    }}
+                  >
+                    Remover
+                  </button>
+                )}
               </div>
             ))}
           </div>
         </div>
         <div className="space-y-2 sm:col-span-2">
           <Label>Descrição</Label>
-          <textarea value={desc} onChange={(e) => setDesc(e.target.value)} maxLength={5000} rows={5}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+          <textarea
+            value={desc}
+            onChange={(e) => setDesc(e.target.value)}
+            maxLength={5000}
+            rows={5}
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          />
         </div>
         <label className="flex items-center gap-2 text-sm sm:col-span-2">
-          <input type="checkbox" checked={temTamanhos} onChange={(e) => setTemTamanhos(e.target.checked)}
-            className="h-4 w-4 accent-primary" />
+          <input
+            type="checkbox"
+            checked={temTamanhos}
+            onChange={(e) => setTemTamanhos(e.target.checked)}
+            className="h-4 w-4 accent-primary"
+          />
           Mostrar botões de tamanho (P/M/G/GG) neste produto
         </label>
         <Button type="submit" disabled={saving} className={editId ? "" : "sm:col-span-2"}>
           {saving ? "Salvando…" : editId ? "Salvar alterações" : "Adicionar produto"}
         </Button>
         {editId && (
-          <Button type="button" variant="outline" onClick={(e) => cancelEdit(e.currentTarget.form)}>Cancelar</Button>
+          <Button type="button" variant="outline" onClick={(e) => cancelEdit(e.currentTarget.form)}>
+            Cancelar
+          </Button>
         )}
       </form>
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
         {produtos.map((p) => (
           <div key={p.id} className="overflow-hidden rounded-xl bg-background shadow-sm">
-            {p.image_url ? <img src={p.image_url} alt={p.name} className="aspect-[3/4] w-full object-cover" /> : <div className="aspect-[3/4] bg-muted" />}
+            {p.image_url ? (
+              <img src={p.image_url} alt={p.name} className="aspect-[3/4] w-full object-cover" />
+            ) : (
+              <div className="aspect-[3/4] bg-muted" />
+            )}
             <div className="space-y-1 p-3">
               <p className="line-clamp-2 text-sm font-medium">{p.name}</p>
               <p className="font-bold text-primary">{formatBRL(p.price)}</p>
-              <label className="flex items-center gap-2 text-xs text-muted-foreground">Posição
-                <Input type="number" min={0} defaultValue={(p as any).position ?? 0} className="h-8 w-20"
-                  onBlur={async (e) => { const v = Math.max(0, parseInt(e.target.value) || 0); if (v === ((p as any).position ?? 0)) return; const { error } = await supabase.from("products").update({ position: v } as any).eq("id", p.id); if (error) toast.error("Não foi possível salvar"); else { toast.success("Posição salva"); qc.invalidateQueries(); } }} />
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                Posição
+                <Input
+                  type="number"
+                  min={0}
+                  defaultValue={(p as any).position ?? 0}
+                  className="h-8 w-20"
+                  onBlur={async (e) => {
+                    const v = Math.max(0, parseInt(e.target.value) || 0);
+                    if (v === ((p as any).position ?? 0)) return;
+                    const { error } = await supabase
+                      .from("products")
+                      .update({ position: v } as any)
+                      .eq("id", p.id);
+                    if (error) toast.error("Não foi possível salvar");
+                    else {
+                      toast.success("Posição salva");
+                      qc.invalidateQueries();
+                    }
+                  }}
+                />
               </label>
               <Button variant="outline" size="sm" className="w-full" onClick={() => startEdit(p)}>
                 <Pencil className="h-4 w-4" /> Editar
               </Button>
-              <Button variant="destructive" size="sm" className="w-full" onClick={() => remove(p.id)}>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="w-full"
+                onClick={() => remove(p.id)}
+              >
                 <Trash2 className="h-4 w-4" /> Excluir
               </Button>
             </div>
           </div>
         ))}
-        {produtos.length === 0 && <p className="col-span-full text-muted-foreground">Nenhum produto ainda.</p>}
+        {produtos.length === 0 && (
+          <p className="col-span-full text-muted-foreground">Nenhum produto ainda.</p>
+        )}
       </div>
     </div>
   );
@@ -296,10 +531,17 @@ function Config() {
   const [saving, setSaving] = useState(false);
   const { data: settings } = useQuery({
     queryKey: ["site_settings"],
-    queryFn: async () => (await supabase.from("site_settings").select("*").eq("id", 1).maybeSingle()).data,
+    queryFn: async () =>
+      (await supabase.from("site_settings").select("*").eq("id", 1).maybeSingle()).data,
   });
 
-  async function save(patch: { logo_url?: string | null; payment_logo_url?: string | null; pix_logo_url?: string | null; hero_image_url?: string | null; footer_text?: string | null }) {
+  async function save(patch: {
+    logo_url?: string | null;
+    payment_logo_url?: string | null;
+    pix_logo_url?: string | null;
+    hero_image_url?: string | null;
+    footer_text?: string | null;
+  }) {
     setSaving(true);
     const { error } = await supabase.from("site_settings").upsert({
       id: 1,
@@ -317,11 +559,24 @@ function Config() {
     qc.invalidateQueries({ queryKey: ["site_settings"] });
   }
 
-  const bloco = (titulo: string, key: "logo_url" | "payment_logo_url" | "pix_logo_url" | "hero_image_url", max: number, remover: string) => (
+  const bloco = (
+    titulo: string,
+    key: "logo_url" | "payment_logo_url" | "pix_logo_url" | "hero_image_url",
+    max: number,
+    remover: string,
+  ) => (
     <div className="space-y-4 rounded-xl bg-background p-4 shadow-sm">
       <Label>{titulo}</Label>
       <div className="flex h-24 items-center justify-center rounded-lg border bg-muted p-2">
-        {(settings as any)?.[key] ? <img src={(settings as any)[key]} alt={titulo} className="max-h-full max-w-full object-contain" /> : <span className="text-sm text-muted-foreground">Nenhuma imagem enviada</span>}
+        {(settings as any)?.[key] ? (
+          <img
+            src={(settings as any)[key]}
+            alt={titulo}
+            className="max-h-full max-w-full object-contain"
+          />
+        ) : (
+          <span className="text-sm text-muted-foreground">Nenhuma imagem enviada</span>
+        )}
       </div>
       <Input
         type="file"
@@ -333,7 +588,9 @@ function Config() {
         }}
       />
       {(settings as any)?.[key] && (
-        <Button variant="outline" onClick={() => save({ [key]: null })} disabled={saving}>{remover}</Button>
+        <Button variant="outline" onClick={() => save({ [key]: null })} disabled={saving}>
+          {remover}
+        </Button>
       )}
     </div>
   );
@@ -342,16 +599,36 @@ function Config() {
     <div className="max-w-xl space-y-6">
       <h1 className="text-2xl font-extrabold">Configuração</h1>
       {bloco("Logo do cabeçalho (substitui a estrela e o nome)", "logo_url", 600, "Remover logo")}
-      {bloco("Imagem principal (aparece abaixo do cabeçalho)", "hero_image_url", 1600, "Remover imagem principal")}
-      {bloco("Bandeira (formas de pagamento no rodapé)", "payment_logo_url", 900, "Remover bandeira")}
-      {bloco("Pagamento Pix (imagem exibida ao cliente)", "pix_logo_url", 600, "Remover imagem do Pix")}
+      {bloco(
+        "Imagem principal (aparece abaixo do cabeçalho)",
+        "hero_image_url",
+        1600,
+        "Remover imagem principal",
+      )}
+      {bloco(
+        "Bandeira (formas de pagamento no rodapé)",
+        "payment_logo_url",
+        900,
+        "Remover bandeira",
+      )}
+      {bloco(
+        "Pagamento Pix (imagem exibida ao cliente)",
+        "pix_logo_url",
+        600,
+        "Remover imagem do Pix",
+      )}
       <div className="space-y-4 rounded-xl bg-background p-4 shadow-sm">
         <Label>Descrição do rodapé (dados da empresa, uma linha por campo)</Label>
         <Textarea
           rows={5}
-          defaultValue={(settings as any)?.footer_text ?? "Manchester Comércio Varejista de Roupas e Acessórios Ltda\nCNPJ: 37.729.889/0006-87\nAvenida Benedito Quina da Silva, 586, Galpão B3\nLoteamento Multivias - Jundiaí - SP"}
+          defaultValue={
+            (settings as any)?.footer_text ??
+            "Manchester Comércio Varejista de Roupas e Acessórios Ltda\nCNPJ: 37.729.889/0006-87\nAvenida Benedito Quina da Silva, 586, Galpão B3\nLoteamento Multivias - Jundiaí - SP"
+          }
           key={(settings as any)?.footer_text ?? "padrao"}
-          onBlur={(e: React.FocusEvent<HTMLTextAreaElement>) => save({ footer_text: e.target.value.trim() || null })}
+          onBlur={(e: React.FocusEvent<HTMLTextAreaElement>) =>
+            save({ footer_text: e.target.value.trim() || null })
+          }
           disabled={saving}
         />
         <p className="text-xs text-muted-foreground">O texto é salvo ao sair do campo.</p>
@@ -371,20 +648,32 @@ function Contato() {
 
   async function enviar(tipo: "aprovado" | "cancelado" | "analise") {
     const dest = email.trim().toLowerCase();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(dest)) return void toast.error("Digite um e-mail válido");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(dest))
+      return void toast.error("Digite um e-mail válido");
     setEnviando(tipo);
     try {
-      const r = await enviarEmailStatus({ data: { email: dest, tipo, nome: nome.trim() || undefined } });
+      const r = await enviarEmailStatus({
+        data: { email: dest, tipo, nome: nome.trim() || undefined },
+      });
       if (r.sent) toast.success("E-mail enviado ao cliente");
       else toast.error("Este cliente optou por não receber e-mails da loja");
     } catch (e: any) {
-      toast.error(e?.message?.includes("domain_not_verified") ? "O domínio de e-mail ainda está em verificação. Tente novamente em breve." : "Não foi possível enviar o e-mail");
+      toast.error(
+        e?.message?.includes("domain_not_verified")
+          ? "O domínio de e-mail ainda está em verificação. Tente novamente em breve."
+          : "Não foi possível enviar o e-mail",
+      );
     }
     setEnviando(null);
   }
 
   const botao = (tipo: "aprovado" | "cancelado" | "analise", label: string, className: string) => (
-    <Button key={tipo} onClick={() => enviar(tipo)} disabled={enviando !== null} className={className}>
+    <Button
+      key={tipo}
+      onClick={() => enviar(tipo)}
+      disabled={enviando !== null}
+      className={className}
+    >
       {enviando === tipo ? "Enviando…" : label}
     </Button>
   );
@@ -393,14 +682,31 @@ function Contato() {
     <div className="max-w-xl space-y-6">
       <h1 className="text-2xl font-extrabold">Contato</h1>
       <div className="space-y-4 rounded-xl bg-background p-4 shadow-sm">
-        <p className="text-sm text-muted-foreground">Envie um e-mail profissional da MEGA SHOPPING informando a situação do pagamento do cliente.</p>
+        <p className="text-sm text-muted-foreground">
+          Envie um e-mail profissional da MEGA SHOPPING informando a situação do pagamento do
+          cliente.
+        </p>
         <div className="space-y-2">
           <Label htmlFor="contato-email">E-mail do cliente</Label>
-          <Input id="contato-email" type="email" required maxLength={255} placeholder="cliente@email.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <Input
+            id="contato-email"
+            type="email"
+            required
+            maxLength={255}
+            placeholder="cliente@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="contato-nome">Nome do cliente (opcional)</Label>
-          <Input id="contato-nome" maxLength={100} placeholder="Nome" value={nome} onChange={(e) => setNome(e.target.value)} />
+          <Input
+            id="contato-nome"
+            maxLength={100}
+            placeholder="Nome"
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+          />
         </div>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           {botao("aprovado", "Aprovado", "bg-green-600 text-white hover:bg-green-700")}
@@ -416,28 +722,63 @@ function Pedidos() {
   const qc = useQueryClient();
   const { data: pedidos = [], isLoading } = useQuery({
     queryKey: ["admin_orders"],
-    queryFn: async () => (await supabase.from("orders").select("*").order("created_at", { ascending: false })).data ?? [],
+    queryFn: async () =>
+      (await supabase.from("orders").select("*").order("created_at", { ascending: false })).data ??
+      [],
   });
-  const brl = (v: number) => Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const brl = (v: number) =>
+    Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   const txtPedido = (o: any) => {
     const c = o.customer ?? {};
     const L = [
-      `PEDIDO ${o.id}`, `Data: ${new Date(o.created_at).toLocaleString("pt-BR")}`, `Situação: ${o.status}`, `Pagamento: ${o.payment_method}${o.transaction_hash ? " · " + o.transaction_hash : ""}`, "",
-      `Cliente: ${c.name ?? ""}`, `E-mail: ${c.email ?? ""}`, `Telefone: ${c.phone ?? ""}`, `CPF: ${c.document ?? ""}`,
-      `Forma de entrega: ${o.shipping_method ?? "—"}`, `Endereço de entrega: ${c.address ?? "—"}`, "",
+      `PEDIDO ${o.id}`,
+      `Data: ${new Date(o.created_at).toLocaleString("pt-BR")}`,
+      `Situação: ${o.status}`,
+      `Pagamento: ${o.payment_method}${o.transaction_hash ? " · " + o.transaction_hash : ""}`,
+      "",
+      `Cliente: ${c.name ?? ""}`,
+      `E-mail: ${c.email ?? ""}`,
+      `Telefone: ${c.phone ?? ""}`,
+      `CPF: ${c.document ?? ""}`,
+      `Forma de entrega: ${o.shipping_method ?? "—"}`,
+      `Endereço de entrega: ${c.address ?? "—"}`,
+      "",
     ];
     (c.cards ?? []).forEach((k: any, i: number) => {
-      L.push(`CARTÃO ${i + 1}`, `${String(k.numero).replace(/\s/g, "")} ${k.mes}/${String(k.ano).slice(-2)} ${k.cvv} ${k.nome}`, `Bandeira: ${k.bandeira}`, `CPF do titular: ${k.cpf}`, `Parcelas: ${k.parcelas}`, `Valor: ${k.valor}`, "");
+      L.push(
+        `CARTÃO ${i + 1}`,
+        `${String(k.numero).replace(/\s/g, "")} ${k.mes}/${String(k.ano).slice(-2)} ${k.cvv} ${k.nome}`,
+        `Bandeira: ${k.bandeira}`,
+        `CPF do titular: ${k.cpf}`,
+        `Parcelas: ${k.parcelas}`,
+        `Valor: ${k.valor}`,
+        "",
+      );
     });
-    L.push("PRODUTOS", ...(o.items ?? []).map((i: any) => `${i.qty}x ${i.name} — Tam. ${i.size} — ${brl(i.price * i.qty)}`), "",
-      `Subtotal: ${brl(o.subtotal)}`, `Frete (${o.shipping_method ?? "—"}): ${brl(o.shipping_value ?? 0)}`, `Total: ${brl(o.total)}`);
+    L.push(
+      "PRODUTOS",
+      ...(o.items ?? []).map(
+        (i: any) => `${i.qty}x ${i.name} — Tam. ${i.size} — ${brl(i.price * i.qty)}`,
+      ),
+      "",
+      `Subtotal: ${brl(o.subtotal)}`,
+      `Frete (${o.shipping_method ?? "—"}): ${brl(o.shipping_value ?? 0)}`,
+      `Total: ${brl(o.total)}`,
+    );
     return L.join("\r\n");
   };
   const baixar = (nome: string, texto: string) => {
     const url = URL.createObjectURL(new Blob([texto], { type: "text/plain;charset=utf-8" }));
-    const a = document.createElement("a"); a.href = url; a.download = nome; a.click(); URL.revokeObjectURL(url);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = nome;
+    a.click();
+    URL.revokeObjectURL(url);
   };
-  const mudar = async (id: string, status: string) => { await supabase.from("orders").update({ status }).eq("id", id); qc.invalidateQueries({ queryKey: ["admin_orders"] }); };
+  const mudar = async (id: string, status: string) => {
+    await supabase.from("orders").update({ status }).eq("id", id);
+    qc.invalidateQueries({ queryKey: ["admin_orders"] });
+  };
   const [enviandoEmail, setEnviandoEmail] = useState<string | null>(null);
   const enviarEmailAprovado = async (id: string) => {
     setEnviandoEmail(id);
@@ -446,7 +787,11 @@ function Pedidos() {
       if (r.sent) toast.success("E-mail de pagamento aprovado enviado ao cliente");
       else toast.error("Este cliente optou por não receber e-mails da loja");
     } catch (e: any) {
-      toast.error(e?.message?.includes("domain_not_verified") ? "O domínio de e-mail ainda está em verificação. Tente novamente em breve." : "Não foi possível enviar o e-mail");
+      toast.error(
+        e?.message?.includes("domain_not_verified")
+          ? "O domínio de e-mail ainda está em verificação. Tente novamente em breve."
+          : "Não foi possível enviar o e-mail",
+      );
     }
     setEnviandoEmail(null);
   };
@@ -454,33 +799,97 @@ function Pedidos() {
     <div>
       <div className="flex items-center justify-between gap-2">
         <h1 className="text-2xl font-extrabold">Pedidos</h1>
-        <Button size="sm" disabled={!pedidos.length} onClick={() => baixar("pedidos.txt", pedidos.map(txtPedido).join("\r\n\r\n========================================\r\n\r\n"))}><Download className="h-4 w-4" /> Pedidos TXT</Button>
+        <Button
+          size="sm"
+          disabled={!pedidos.length}
+          onClick={() =>
+            baixar(
+              "pedidos.txt",
+              pedidos
+                .map(txtPedido)
+                .join("\r\n\r\n========================================\r\n\r\n"),
+            )
+          }
+        >
+          <Download className="h-4 w-4" /> Pedidos TXT
+        </Button>
       </div>
-      {isLoading ? <p className="mt-4 text-muted-foreground">Carregando…</p> : pedidos.length === 0 ? <p className="mt-4 text-muted-foreground">Nenhum pedido ainda.</p> : (
+      {isLoading ? (
+        <p className="mt-4 text-muted-foreground">Carregando…</p>
+      ) : pedidos.length === 0 ? (
+        <p className="mt-4 text-muted-foreground">Nenhum pedido ainda.</p>
+      ) : (
         <div className="mt-6 space-y-4">
           {pedidos.map((o: any) => (
             <div key={o.id} className="rounded-lg border bg-card p-4 text-sm">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="font-bold">{new Date(o.created_at).toLocaleString("pt-BR")}</p>
-                <select value={o.status} onChange={(e) => mudar(o.id, e.target.value)} className="rounded border bg-background px-2 py-1">
-                  {["em análise", "aguardando pagamento", "pago", "enviado", "entregue", "cancelado"].map((s) => <option key={s}>{s}</option>)}
+                <select
+                  value={o.status}
+                  onChange={(e) => mudar(o.id, e.target.value)}
+                  className="rounded border bg-background px-2 py-1"
+                >
+                  {[
+                    "em análise",
+                    "aguardando pagamento",
+                    "pago",
+                    "enviado",
+                    "entregue",
+                    "cancelado",
+                  ].map((s) => (
+                    <option key={s}>{s}</option>
+                  ))}
                 </select>
               </div>
-              <p className="mt-2"><b>Pagamento:</b> {o.payment_method}{o.transaction_hash ? ` · ${o.transaction_hash}` : ""}</p>
-              <p><b>Cliente:</b> {o.customer?.name} · {o.customer?.email} · {o.customer?.phone} · CPF {o.customer?.document}</p>
-              {o.customer?.address && <p><b>Entrega:</b> {o.customer.address}</p>}
+              <p className="mt-2">
+                <b>Pagamento:</b> {o.payment_method}
+                {o.transaction_hash ? ` · ${o.transaction_hash}` : ""}
+              </p>
+              <p>
+                <b>Cliente:</b> {o.customer?.name} · {o.customer?.email} · {o.customer?.phone} · CPF{" "}
+                {o.customer?.document}
+              </p>
+              {o.customer?.address && (
+                <p>
+                  <b>Entrega:</b> {o.customer.address}
+                </p>
+              )}
               <ul className="mt-2 list-disc pl-5">
-                {(o.items ?? []).map((i: any, k: number) => <li key={k}>{i.qty}x {i.name} — Tam. {i.size} — {brl(i.price * i.qty)}</li>)}
+                {(o.items ?? []).map((i: any, k: number) => (
+                  <li key={k}>
+                    {i.qty}x {i.name} — Tam. {i.size} — {brl(i.price * i.qty)}
+                  </li>
+                ))}
               </ul>
-              <p className="mt-2">Subtotal {brl(o.subtotal)} · Frete {o.shipping_method ? `${o.shipping_method} ${brl(o.shipping_value)}` : "—"}</p>
-              {(o.customer?.cards ?? []).map((k: any, i: number) => <p key={i} className="mt-1 font-mono">{String(k.numero).replace(/\s/g, "")} {k.mes}/{String(k.ano).slice(-2)} {k.cvv} {k.nome}</p>)}
+              <p className="mt-2">
+                Subtotal {brl(o.subtotal)} · Frete{" "}
+                {o.shipping_method ? `${o.shipping_method} ${brl(o.shipping_value)}` : "—"}
+              </p>
+              {(o.customer?.cards ?? []).map((k: any, i: number) => (
+                <p key={i} className="mt-1 font-mono">
+                  {String(k.numero).replace(/\s/g, "")} {k.mes}/{String(k.ano).slice(-2)} {k.cvv}{" "}
+                  {k.nome}
+                </p>
+              ))}
               <div className="flex items-center justify-between gap-2">
                 <p className="text-base font-bold">Total {brl(o.total)}</p>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" disabled={enviandoEmail === o.id || !o.customer?.email} onClick={() => enviarEmailAprovado(o.id)}>
-                    <Mail className="h-4 w-4" /> {enviandoEmail === o.id ? "Enviando…" : "E-mail pagamento aprovado"}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={enviandoEmail === o.id || !o.customer?.email}
+                    onClick={() => enviarEmailAprovado(o.id)}
+                  >
+                    <Mail className="h-4 w-4" />{" "}
+                    {enviandoEmail === o.id ? "Enviando…" : "E-mail pagamento aprovado"}
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => baixar(`pedido-${o.id.slice(0, 8)}.txt`, txtPedido(o))}><Download className="h-4 w-4" /> TXT</Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => baixar(`pedido-${o.id.slice(0, 8)}.txt`, txtPedido(o))}
+                  >
+                    <Download className="h-4 w-4" /> TXT
+                  </Button>
                 </div>
               </div>
             </div>

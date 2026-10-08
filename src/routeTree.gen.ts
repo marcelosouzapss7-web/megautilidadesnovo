@@ -14,7 +14,6 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as CarrinhoRouteImport } from './routes/carrinho'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as ProdutoIdRouteImport } from './routes/produto.$id'
-import { Route as ApiPublicImgIdRouteImport } from './routes/api/public/img.$id'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 
 const IndexRoute = IndexRouteImport.update({
@@ -42,11 +41,6 @@ const ProdutoIdRoute = ProdutoIdRouteImport.update({
   path: '/produto/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicImgIdRoute = ApiPublicImgIdRouteImport.update({
-  id: '/api/public/img/$id',
-  path: '/api/public/img/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LovableEmailTransactionalPreviewRoute =
   LovableEmailTransactionalPreviewRouteImport.update({
     id: '/lovable/email/transactional/preview',
@@ -60,7 +54,6 @@ export interface FileRoutesByFullPath {
   '/carrinho': typeof CarrinhoRoute
   '/checkout': typeof CheckoutRoute
   '/produto/$id': typeof ProdutoIdRoute
-  '/api/public/img/$id': typeof ApiPublicImgIdRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRoutesByTo {
@@ -69,7 +62,6 @@ export interface FileRoutesByTo {
   '/carrinho': typeof CarrinhoRoute
   '/checkout': typeof CheckoutRoute
   '/produto/$id': typeof ProdutoIdRoute
-  '/api/public/img/$id': typeof ApiPublicImgIdRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRoutesById {
@@ -79,7 +71,6 @@ export interface FileRoutesById {
   '/carrinho': typeof CarrinhoRoute
   '/checkout': typeof CheckoutRoute
   '/produto/$id': typeof ProdutoIdRoute
-  '/api/public/img/$id': typeof ApiPublicImgIdRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRouteTypes {
@@ -90,7 +81,6 @@ export interface FileRouteTypes {
     | '/carrinho'
     | '/checkout'
     | '/produto/$id'
-    | '/api/public/img/$id'
     | '/lovable/email/transactional/preview'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -99,7 +89,6 @@ export interface FileRouteTypes {
     | '/carrinho'
     | '/checkout'
     | '/produto/$id'
-    | '/api/public/img/$id'
     | '/lovable/email/transactional/preview'
   id:
     | '__root__'
@@ -108,7 +97,6 @@ export interface FileRouteTypes {
     | '/carrinho'
     | '/checkout'
     | '/produto/$id'
-    | '/api/public/img/$id'
     | '/lovable/email/transactional/preview'
   fileRoutesById: FileRoutesById
 }
@@ -118,7 +106,6 @@ export interface RootRouteChildren {
   CarrinhoRoute: typeof CarrinhoRoute
   CheckoutRoute: typeof CheckoutRoute
   ProdutoIdRoute: typeof ProdutoIdRoute
-  ApiPublicImgIdRoute: typeof ApiPublicImgIdRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
 }
 
@@ -159,13 +146,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProdutoIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/img/$id': {
-      id: '/api/public/img/$id'
-      path: '/api/public/img/$id'
-      fullPath: '/api/public/img/$id'
-      preLoaderRoute: typeof ApiPublicImgIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/lovable/email/transactional/preview': {
       id: '/lovable/email/transactional/preview'
       path: '/lovable/email/transactional/preview'
@@ -182,7 +162,6 @@ const rootRouteChildren: RootRouteChildren = {
   CarrinhoRoute: CarrinhoRoute,
   CheckoutRoute: CheckoutRoute,
   ProdutoIdRoute: ProdutoIdRoute,
-  ApiPublicImgIdRoute: ApiPublicImgIdRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
 }
 export const routeTree = rootRouteImport
