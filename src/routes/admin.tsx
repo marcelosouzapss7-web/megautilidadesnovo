@@ -16,7 +16,6 @@ import {
 import { enviarEmailPagamentoAprovado, enviarEmailStatus } from "@/lib/email.functions";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { fileToDataUrl } from "@/lib/image";
 import {
   productImagePathFromPublicUrl,
   uploadProductImage,
@@ -584,7 +583,15 @@ function Config() {
         disabled={saving}
         onChange={async (e) => {
           const f = e.target.files?.[0];
-          if (f) await save({ [key]: await fileToDataUrl(f, max) });
+          if (!f) return;
+          const { compressProductImage } = await import("@/lib/product-images.mjs");
+          const { blob, extension } = await compressProductImage(f, Math.max(max, 1200));
+          const path = `site/${key}-${crypto.randomUUID()}.${extension}`;
+          const { error } = await supabase.storage
+            .from("products")
+            .upload(path, blob, { contentType: blob.type, cacheControl: "31536000" });
+          if (error) return void toast.error("Não foi possível enviar a imagem.");
+          await save({ [key]: supabase.storage.from("products").getPublicUrl(path).data.publicUrl });
         }}
       />
       {(settings as any)?.[key] && (
